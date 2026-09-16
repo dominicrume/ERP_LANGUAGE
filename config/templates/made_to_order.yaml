@@ -1,0 +1,15 @@
+id: made_to_order
+industry: manufacturing_moto
+title: "Made-to-Order Backlog"
+narrative: >
+  Your make-to-order backlog for {{product}} has grown beyond capacity.
+  Decide how to sequence production and whether to subcontract overflow.
+product_pool: ["custom cabinetry", "industrial pumps", "bespoke furniture"]
+decisions:
+  - id: sequencing
+    label: "How do you sequence the backlog?"
+    options: ["earliest_due_date", "shortest_job_first", "highest_margin_first"]
+  - id: subcontract
+    label: "Subcontract overflow capacity?"
+    options: ["yes", "no"]
+kpi_weights: { on_time_delivery: 0.45, margin: 0.35, capacity_utilisation: 0.20 }

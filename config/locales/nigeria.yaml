@@ -1,0 +1,11 @@
+code: NG
+currency: NGN
+tax:
+  type: VAT
+  standard_rate: 0.075
+  reduced_rate: 0.0
+  notes: "VAT at 7.5%; Withholding Tax (WHT) also applies to many B2B service payments, typically 5-10%."
+freight_expedite_multiplier: 2.1
+payment_terms_days: 45
+accounting_period: "calendar_month"
+regulatory_note: "Longer payment terms and higher expedite premiums reflect logistics realities; WHT creates a separate ledger entry from VAT."

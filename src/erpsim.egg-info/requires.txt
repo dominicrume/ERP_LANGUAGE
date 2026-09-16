@@ -1,0 +1,8 @@
+fastapi>=0.110
+uvicorn>=0.29
+sqlmodel>=0.0.16
+pyyaml>=6.0
+python-multipart>=0.0.9
+
+[dev]
+pytest>=8.0

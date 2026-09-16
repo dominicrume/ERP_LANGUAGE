@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERP Decision Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#12151A;
+  --paper:#FAFAF8;
+  --paper-dim:#F0EEE7;
+  --teal:#2F5D50;
+  --teal-deep:#1E4038;
+  --amber:#C6772E;
+  --line:rgba(18,21,26,.10);
+  --muted:#6B6F76;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+body{background:var(--paper);color:var(--ink);font-family:'Instrument Sans',sans-serif;line-height:1.55;min-height:100vh}
+.wrap{max-width:760px;margin:0 auto;padding:0 24px}
+h1,h2,h3,.serif{font-family:'Newsreader',serif}
+
+/* ---------- TOP BAR ---------- */
+.topbar{border-bottom:1px solid var(--line);padding:18px 0;position:sticky;top:0;background:rgba(250,250,248,.92);backdrop-filter:blur(6px);z-index:30}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between}
+.brand{font-family:'Newsreader',serif;font-weight:500;font-size:1.15rem;letter-spacing:-.01em}
+.brand em{font-style:normal;color:var(--teal)}
+.mode-toggle{display:flex;gap:2px;background:var(--paper-dim);border-radius:999px;padding:3px}
+.mode-toggle button{font-family:'Instrument Sans',sans-serif;font-size:.78rem;font-weight:600;border:none;background:none;padding:7px 16px;border-radius:999px;cursor:pointer;color:var(--muted)}
+.mode-toggle button.active{background:var(--ink);color:var(--paper)}
+
+/* ---------- WELCOME / MEMORY STRIP ---------- */
+.welcome{padding:40px 0 8px}
+.welcome .greeting{font-size:.85rem;color:var(--muted);margin-bottom:6px}
+.welcome h1{font-size:clamp(1.9rem,5vw,2.6rem);font-weight:500;letter-spacing:-.01em;line-height:1.15;margin-bottom:14px}
+.memory-strip{display:none;align-items:center;gap:10px;background:var(--paper-dim);border-radius:10px;padding:12px 16px;font-size:.86rem;color:var(--ink);margin-bottom:8px}
+.memory-strip.show{display:flex}
+.memory-strip .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);flex:none}
+.memory-strip b{color:var(--teal-deep)}
+
+/* ---------- CONTROLS ---------- */
+.controls{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0 8px}
+select,input[type=text]{
+  font-family:'Instrument Sans',sans-serif;font-size:.9rem;font-weight:500;
+  padding:11px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);
+  cursor:pointer;
+}
+select:focus,input:focus{outline:2px solid var(--teal);outline-offset:1px}
+.btn{
+  font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:.9rem;
+  padding:12px 22px;border-radius:8px;border:none;cursor:pointer;transition:transform .12s ease, background .15s;
+}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--teal);color:#fff}
+.btn-primary:hover{background:var(--teal-deep)}
+.btn-ghost{background:none;border:1px solid var(--line);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--ink)}
+
+/* ---------- SCENARIO CARD (the story) ---------- */
+.scenario{display:none;margin-top:28px}
+.scenario.show{display:block}
+.scenario-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:34px;box-shadow:0 1px 3px rgba(18,21,26,.04)}
+.scenario-tag{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);font-weight:700;margin-bottom:10px}
+.scenario-title{font-size:1.7rem;font-weight:500;margin-bottom:14px;letter-spacing:-.01em}
+.scenario-narrative{font-family:'Newsreader',serif;font-size:1.14rem;line-height:1.65;color:#2A2E35;margin-bottom:22px}
+.locale-facts{display:flex;gap:18px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:16px;margin-bottom:22px}
+.locale-facts b{color:var(--ink);font-weight:600}
+
+/* ---------- DECISION CARDS (the flip reveal — signature moment) ---------- */
+.decision{margin-top:20px}
+.decision-label{font-weight:600;font-size:.98rem;margin-bottom:12px}
+.card-flip{perspective:1200px;min-height:96px}
+.card-inner{position:relative;width:100%;min-height:96px;transition:transform .55s cubic-bezier(.4,.1,.2,1);transform-style:preserve-3d}
+.card-inner.flipped{transform:rotateX(180deg)}
+.card-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;justify-content:center}
+.card-front{background:var(--paper-dim);border:1px solid var(--line)}
+.card-back{background:var(--ink);color:var(--paper);transform:rotateX(180deg)}
+.options{display:flex;gap:10px;flex-wrap:wrap}
+.opt{font-family:'Instrument Sans',sans-serif;font-size:.86rem;font-weight:500;padding:9px 16px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer;transition:.15s}
+.opt:hover{border-color:var(--teal);color:var(--teal-deep)}
+.card-back .delta{font-family:'Newsreader',serif;font-size:1.6rem;font-weight:500;margin-bottom:4px}
+.card-back .delta.pos{color:#8FD9C4}
+.card-back .delta.neg{color:#E8A985}
+.card-back .justification{font-size:.86rem;color:#D8D6CE;line-height:1.5}
+
+/* ---------- SCORE / STREAK BAR ---------- */
+.scorebar{display:none;align-items:center;gap:22px;margin-top:26px;padding:18px 22px;background:var(--ink);color:var(--paper);border-radius:14px;flex-wrap:wrap}
+.scorebar.show{display:flex}
+.scorebar .stat{font-family:'Newsreader',serif;font-size:1.5rem;font-weight:500}
+.scorebar .stat-label{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:#A8ABA2;margin-top:2px}
+
+/* ---------- INSTRUCTOR VIEW ---------- */
+.instructor{display:none;padding:40px 0}
+.instructor.show{display:block}
+.instructor h2{font-size:1.5rem;font-weight:500;margin-bottom:6px}
+.instructor .sub{color:var(--muted);font-size:.9rem;margin-bottom:22px}
+.catalog-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:30px}
+.catalog-stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;text-align:center}
+.catalog-stat .n{font-family:'Newsreader',serif;font-size:1.8rem;font-weight:500;color:var(--teal-deep)}
+.catalog-stat .l{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+textarea{width:100%;font-family:'ui-monospace',monospace;font-size:.82rem;padding:16px;border:1px solid var(--line);border-radius:10px;min-height:180px;resize:vertical}
+.validate-result{margin-top:12px;font-size:.86rem;padding:12px 16px;border-radius:8px;display:none}
+.validate-result.ok{display:block;background:#E8F3EE;color:var(--teal-deep)}
+.validate-result.err{display:block;background:#FBEAE3;color:#A44A1E}
+
+footer{padding:60px 0 40px;color:var(--muted);font-size:.82rem;text-align:center}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <div class="brand">ERP Decision <em>Lab</em></div>
+    <div class="mode-toggle">
+      <button id="tabLearner" class="active" onclick="setMode('learner')">Learner</button>
+      <button id="tabInstructor" onclick="setMode('instructor')">Instructor</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ LEARNER VIEW ============ -->
+<div id="learnerView" class="wrap">
+  <div class="welcome">
+    <div class="greeting" id="greeting">Operational decision-support, localized.</div>
+    <h1 id="welcomeHeading">What's the situation today?</h1>
+    <div class="memory-strip" id="memoryStrip">
+      <span class="dot"></span>
+      <span id="memoryText"></span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <input type="text" id="learnerId" placeholder="Your name" value="frank" style="min-width:140px">
+    <select id="templateSelect"></select>
+    <select id="localeSelect"></select>
+    <button class="btn btn-primary" onclick="loadScenario()">Begin scenario</button>
+  </div>
+
+  <div class="scenario" id="scenarioBlock">
+    <div class="scenario-card">
+      <div class="scenario-tag" id="scenarioIndustry">—</div>
+      <div class="scenario-title" id="scenarioTitle">—</div>
+      <p class="scenario-narrative" id="scenarioNarrative">—</p>
+      <div class="locale-facts" id="localeFacts"></div>
+      <div id="decisionsContainer"></div>
+    </div>
+  </div>
+
+  <div class="scorebar" id="scorebar">
+    <div><div class="stat" id="statRunning">100.0</div><div class="stat-label">Running score</div></div>
+    <div><div class="stat" id="statBest">—</div><div class="stat-label">Your best</div></div>
+    <div><div class="stat" id="statAttempts">—</div><div class="stat-label">Attempts</div></div>
+  </div>
+</div>
+
+<!-- ============ INSTRUCTOR VIEW ============ -->
+<div id="instructorView" class="instructor wrap">
+  <h2>Instructor</h2>
+  <p class="sub">One template file × one locale file = a new scenario for every learner, with zero engineering. Author a template below to check it's valid before publishing.</p>
+
+  <div class="catalog-grid" id="catalogGrid"></div>
+
+  <label style="font-weight:600;font-size:.9rem;display:block;margin-bottom:8px">Validate a new template (YAML)</label>
+  <textarea id="templateYaml" placeholder="id: my_scenario
+industry: retail
+title: My New Scenario
+narrative: &quot;Describe the situation involving {{product}}.&quot;
+product_pool: [&quot;widgets&quot;]
+decisions:
+  - id: choice_a
+    label: &quot;What do you do?&quot;
+    options: [&quot;option_1&quot;, &quot;option_2&quot;]
+kpi_weights: { cash_position: 1.0 }"></textarea>
+  <div style="margin-top:12px">
+    <button class="btn btn-primary" onclick="validateTemplate()">Validate template</button>
+  </div>
+  <div class="validate-result" id="validateResult"></div>
+</div>
+
+<footer>Built on real localization, not a translated UI. Every score carries its reason.</footer>
+
+<script>
+const API = window.location.origin;
+let currentScenario = null;
+let flipped = {};
+
+function setMode(mode){
+  document.getElementById('learnerView').style.display = mode==='learner' ? 'block' : 'none';
+  document.getElementById('instructorView').classList.toggle('show', mode==='instructor');
+  document.getElementById('tabLearner').classList.toggle('active', mode==='learner');
+  document.getElementById('tabInstructor').classList.toggle('active', mode==='instructor');
+  if(mode==='instructor') loadCatalog();
+}
+
+async function loadCatalog(){
+  try{
+    const r = await fetch(`${API}/catalog`);
+    const d = await r.json();
+    document.getElementById('catalogGrid').innerHTML = `
+      <div class="catalog-stat"><div class="n">${d.templates.length}</div><div class="l">Templates</div></div>
+      <div class="catalog-stat"><div class="n">${d.locales.length}</div><div class="l">Locales</div></div>
+      <div class="catalog-stat"><div class="n">${d.possible_scenarios}</div><div class="l">Possible scenarios</div></div>
+    `;
+  }catch(e){ console.error(e); }
+}
+
+async function populateSelectors(){
+  try{
+    const r = await fetch(`${API}/catalog`);
+    const d = await r.json();
+    document.getElementById('templateSelect').innerHTML = d.templates.map(t=>`<option value="${t}">${t.replace(/_/g,' ')}</option>`).join('');
+    document.getElementById('localeSelect').innerHTML = d.locales.map(l=>`<option value="${l}">${l.toUpperCase()}</option>`).join('');
+  }catch(e){
+    document.getElementById('greeting').textContent = 'Could not reach the API — is the backend running?';
+  }
+}
+
+async function checkMemory(){
+  const learnerId = document.getElementById('learnerId').value.trim();
+  const templateId = document.getElementById('templateSelect').value;
+  if(!learnerId || !templateId) return;
+  try{
+    const r = await fetch(`${API}/learners/${learnerId}/progress/${templateId}`);
+    const d = await r.json();
+    const strip = document.getElementById('memoryStrip');
+    if(d.attempts > 0){
+      document.getElementById('memoryText').innerHTML = `Welcome back, <b>${learnerId}</b> — you've tried this ${d.attempts} time${d.attempts>1?'s':''}. Best score: <b>${d.best_score}</b>.`;
+      strip.classList.add('show');
+    } else {
+      strip.classList.remove('show');
+    }
+  }catch(e){}
+}
+
+async function loadScenario(){
+  const templateId = document.getElementById('templateSelect').value;
+  const locale = document.getElementById('localeSelect').value;
+  const seed = Math.floor(Math.random()*1000);
+  try{
+    const body = new URLSearchParams({template_id: templateId, locale, seed});
+    const r = await fetch(`${API}/scenarios/generate`, {method:'POST', body});
+    if(!r.ok){ throw new Error(await r.text()); }
+    const s = await r.json();
+    currentScenario = s;
+    renderScenario(s);
+    await checkMemory();
+  }catch(e){
+    alert('Could not generate scenario: ' + e.message);
+  }
+}
+
+function renderScenario(s){
+  document.getElementById('scenarioBlock').classList.add('show');
+  document.getElementById('scenarioIndustry').textContent = s.locale + ' · ' + s.currency;
+  document.getElementById('scenarioTitle').textContent = s.title;
+  document.getElementById('scenarioNarrative').textContent = s.narrative;
+  const lr = s.locale_rules;
+  document.getElementById('localeFacts').innerHTML = `
+    <span><b>${(lr.tax_rate*100).toFixed(1)}%</b> ${lr.tax_type}</span>
+    <span><b>${lr.freight_expedite_multiplier}x</b> expedite freight cost</span>
+    <span><b>${lr.payment_terms_days} days</b> payment terms</span>
+  `;
+  flipped = {};
+  document.getElementById('decisionsContainer').innerHTML = s.decisions.map((d,i)=>`
+    <div class="decision">
+      <div class="decision-label">${d.label}</div>
+      <div class="card-flip">
+        <div class="card-inner" id="cardInner-${d.id}">
+          <div class="card-face card-front">
+            <div class="options">
+              ${d.options.map(o=>`<button class="opt" onclick="makeDecision('${d.id}','${o}')">${o.replace(/_/g,' ')}</button>`).join('')}
+            </div>
+          </div>
+          <div class="card-face card-back" id="cardBack-${d.id}"></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function makeDecision(decisionId, choice){
+  if(!currentScenario) return;
+  const learnerId = document.getElementById('learnerId').value.trim() || null;
+  try{
+    const body = new URLSearchParams({
+      template_id: currentScenario.template_id, locale: currentScenario.locale,
+      seed: currentScenario.seed, decision_id: decisionId, choice,
+    });
+    if(learnerId) body.set('learner_id', learnerId);
+    const r = await fetch(`${API}/decisions/score`, {method:'POST', body});
+    if(!r.ok){ throw new Error(await r.text()); }
+    const result = await r.json();
+    revealCard(decisionId, result);
+    await refreshScorebar(learnerId, currentScenario.template_id);
+  }catch(e){
+    alert('Could not score decision: ' + e.message);
+  }
+}
+
+function revealCard(decisionId, result){
+  const back = document.getElementById(`cardBack-${decisionId}`);
+  const cls = result.score_delta > 0 ? 'pos' : (result.score_delta < 0 ? 'neg' : '');
+  const sign = result.score_delta > 0 ? '+' : '';
+  back.innerHTML = `
+    <div class="delta ${cls}">${sign}${result.score_delta} pts</div>
+    <div class="justification">${result.justification.join(' ')}</div>
+  `;
+  const inner = document.getElementById(`cardInner-${decisionId}`);
+  requestAnimationFrame(()=> inner.classList.add('flipped'));
+}
+
+async function refreshScorebar(learnerId, templateId){
+  if(!learnerId) return;
+  try{
+    const r = await fetch(`${API}/learners/${learnerId}/progress/${templateId}`);
+    const d = await r.json();
+    document.getElementById('scorebar').classList.add('show');
+    document.getElementById('statBest').textContent = d.best_score ?? '—';
+    document.getElementById('statAttempts').textContent = d.attempts ?? 0;
+  }catch(e){}
+}
+
+async function validateTemplate(){
+  const raw = document.getElementById('templateYaml').value;
+  const box = document.getElementById('validateResult');
+  try{
+    const body = new URLSearchParams({raw_yaml: raw});
+    const r = await fetch(`${API}/instructor/templates/validate`, {method:'POST', body});
+    const d = await r.json();
+    if(r.ok){
+      box.className = 'validate-result ok';
+      box.textContent = `Valid — template "${d.template_id}" is ready to publish.`;
+    } else {
+      box.className = 'validate-result err';
+      box.textContent = d.detail || 'Invalid template.';
+    }
+  }catch(e){
+    box.className = 'validate-result err';
+    box.textContent = 'Could not reach the API.';
+  }
+}
+
+populateSelectors().then(checkMemory);
+document.getElementById('learnerId').addEventListener('change', checkMemory);
+document.getElementById('templateSelect').addEventListener('change', checkMemory);
+</script>
+</body>
+</html>

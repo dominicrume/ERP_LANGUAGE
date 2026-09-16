@@ -1,0 +1,17 @@
+id: heatwave_demand
+industry: manufacturing_distribution
+title: "Heat Wave Demand Spike"
+narrative: >
+  A sudden heat wave has driven demand for {{product}} up sharply.
+  Available stock cannot cover all open sales orders. You must decide
+  which customers to prioritise for shipment and whether to pay for
+  expedited freight to replenish stock faster.
+product_pool: ["carbonated water", "bottled water", "ice cream", "electric fans"]
+decisions:
+  - id: customer_allocation
+    label: "Which customers do you ship to first?"
+    options: ["highest_value_first", "first_come_first_served", "strategic_accounts_first"]
+  - id: freight_choice
+    label: "Standard or expedited freight for replenishment?"
+    options: ["standard", "expedite"]
+kpi_weights: { cash_position: 0.4, customer_satisfaction: 0.35, overhead_cost: 0.25 }

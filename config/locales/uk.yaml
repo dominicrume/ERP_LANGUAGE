@@ -1,0 +1,11 @@
+code: UK
+currency: GBP
+tax:
+  type: VAT
+  standard_rate: 0.20
+  reduced_rate: 0.05
+  notes: "VAT charged on most goods; input VAT reclaimable for VAT-registered businesses."
+freight_expedite_multiplier: 1.6
+payment_terms_days: 30
+accounting_period: "calendar_month"
+regulatory_note: "Advertising Standards Authority (ASA) governs marketing claims; not relevant to inventory ops but referenced for cross-module consistency."

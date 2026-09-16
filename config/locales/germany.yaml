@@ -1,0 +1,11 @@
+code: DE
+currency: EUR
+tax:
+  type: VAT
+  standard_rate: 0.19
+  reduced_rate: 0.07
+  notes: "Umsatzsteuer (USt); reverse-charge applies for intra-EU B2B."
+freight_expedite_multiplier: 1.5
+payment_terms_days: 14
+accounting_period: "calendar_month"
+regulatory_note: "Skonto (early payment discount) culturally standard — 2% for 10-day payment is common."

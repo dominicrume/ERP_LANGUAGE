@@ -1,0 +1,11 @@
+code: BR
+currency: BRL
+tax:
+  type: ICMS_ISS
+  standard_rate: 0.18
+  reduced_rate: 0.12
+  notes: "ICMS (state-level goods tax, rate varies by state) plus ISS (municipal service tax). Materially different from single-rate VAT systems."
+freight_expedite_multiplier: 1.9
+payment_terms_days: 28
+accounting_period: "calendar_month"
+regulatory_note: "State-level tax variation means the SAME transaction can score differently depending on origin/destination state — deliberately harder scenario."
