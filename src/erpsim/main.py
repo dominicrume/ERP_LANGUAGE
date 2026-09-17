@@ -52,9 +52,14 @@ def score(template_id: str = Form(...), locale: str = Form(...), seed: int = For
         scenario = generator.generate(template_id, locale, seed)
     except (templates.UnknownTemplateError, locales.UnknownLocaleError) as e:
         raise HTTPException(404, str(e))
-    valid_ids = {d["id"] for d in scenario["decisions"]}
-    if decision_id not in valid_ids:
-        raise HTTPException(422, f"decision_id must be one of {sorted(valid_ids)}")
+    decision = next((d for d in scenario["decisions"] if d["id"] == decision_id), None)
+    if decision is None:
+        valid_ids = sorted(d["id"] for d in scenario["decisions"])
+        raise HTTPException(422, f"decision_id must be one of {valid_ids}")
+    if choice not in decision["options"]:
+        # BREAK.md #3: reject before scoring and before any memory write.
+        raise HTTPException(422, f"choice '{choice}' is not an option for "
+                                 f"'{decision_id}'. Options: {decision['options']}")
     result = scoring.score_decision(scenario, decision_id, choice)
     if learner_id:
         with Session(engine) as s:
