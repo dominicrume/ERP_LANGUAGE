@@ -11,8 +11,10 @@ def test_no_alert_dialogs():
     assert "alert(" not in HTML
 
 
-def test_running_score_comes_from_the_api_response():
-    assert "result.running_score" in HTML
+def test_the_score_on_screen_comes_from_the_api_response():
+    """The cumulative score belongs to the run, which the server owns."""
+    assert "result.score_so_far" in HTML
+    assert "summary.final_score" in HTML
     assert "statRunning" in HTML
 
 
@@ -32,8 +34,12 @@ def test_frontend_never_reimplements_scoring_or_localization():
         assert not re.search(rf"points[^;\n]*{rule}|{rule}[^;\n]*points", arithmetic)
 
 
-def test_frontend_scores_with_locale_id():
-    assert "locale: currentScenario.locale_id" in HTML
+def test_decisions_are_sent_to_the_run_that_owns_them():
+    """A decision is scored inside its sitting, so the server can add it to
+    what came before instead of scoring it alone."""
+    assert "/runs/${encodeURIComponent(currentRun.run_id)}/decisions" in HTML
+    assert "/runs/${encodeURIComponent(currentRun.run_id)}/complete" in HTML
+    assert "template_id: currentScenario.template_id" not in HTML
 
 
 def test_learner_data_promise_is_stated_in_product():

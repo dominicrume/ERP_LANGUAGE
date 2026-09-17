@@ -194,6 +194,35 @@ select{cursor:pointer}
 .local-rule{margin-top:10px;padding-top:10px;border-top:1px solid rgba(238,243,241,.16);font-size:.84rem;line-height:1.5;color:var(--on-reveal-2);max-width:70ch}
 .local-rule b{color:var(--on-reveal);font-weight:600}
 
+/* how far through the sitting the learner is */
+.run-progress{display:flex;align-items:center;gap:12px;margin-bottom:18px;font-size:.84rem;color:var(--muted)}
+.run-progress .track{flex:1;height:6px;border-radius:var(--r-pill);background:var(--surface-3);overflow:hidden}
+.run-progress .fill{height:100%;background:var(--accent);border-radius:var(--r-pill);transition:width .4s var(--ease)}
+.run-progress .now{font-variant-numeric:tabular-nums;color:var(--text);font-weight:600}
+
+/* the end of the sitting */
+.finish{display:none;margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(20px,4vw,32px);box-shadow:var(--shadow)}
+.finish.show{display:block;animation:rise .4s var(--ease) both}
+.finish h2{font-size:clamp(1.5rem,4vw,1.9rem);margin-bottom:4px}
+.finish .lede{color:var(--muted);font-size:.92rem;margin-bottom:20px}
+.final-score{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--line)}
+.final-score .n{font-family:var(--serif);font-size:clamp(2.6rem,9vw,3.4rem);font-weight:500;font-variant-numeric:tabular-nums;line-height:1;color:var(--accent-text)}
+.final-score .of{font-size:.92rem;color:var(--muted)}
+.final-score .best{margin-left:auto;font-size:.86rem;color:var(--muted);text-align:right}
+.final-score .best b{display:block;font-family:var(--serif);font-size:1.3rem;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums}
+.finish-list{display:grid;gap:10px;margin-bottom:20px}
+.finish-row{display:grid;grid-template-columns:4.4rem minmax(0,1fr);gap:12px;align-items:baseline;padding:10px 0;border-top:1px solid var(--line)}
+.finish-row .d{font-family:var(--serif);font-size:1.15rem;font-weight:500;font-variant-numeric:tabular-nums;text-align:right}
+.finish-row .d.pos{color:var(--pos)}.finish-row .d.neg{color:var(--neg)}
+.finish-row .what{font-size:.9rem;line-height:1.5}
+.finish-row .what b{display:block;font-weight:600;margin-bottom:2px}
+.finish-row .what span{color:var(--muted)}
+.tripped-card{background:var(--warn-soft);color:var(--warn);border-radius:var(--r-md);padding:13px 15px;font-size:.9rem;line-height:1.5;margin-bottom:20px}
+.tripped-card b{font-weight:700}
+.streak-line{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;font-size:.86rem;color:var(--muted);margin-bottom:20px}
+.streak-line b{font-family:var(--serif);font-size:1.2rem;font-weight:500;color:var(--text);margin-right:5px;font-variant-numeric:tabular-nums}
+.finish-actions{display:flex;gap:10px;flex-wrap:wrap}
+
 /* score summary: same palette, no dark slab */
 .scorebar{display:none;margin-top:24px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-lg);grid-template-columns:repeat(3,minmax(0,1fr))}
 .scorebar.show{display:grid}
@@ -391,14 +420,34 @@ footer{padding:56px 20px 40px;color:var(--muted);font-size:.86rem;text-align:cen
       <h2 class="scenario-title" id="scenarioTitle"></h2>
       <p class="scenario-narrative" id="scenarioNarrative"></p>
       <dl class="locale-facts" id="localeFacts"></dl>
+      <div class="run-progress" id="runProgress">
+        <span class="now" id="runProgressText"></span>
+        <span class="track"><span class="fill" id="runProgressFill" style="width:0%"></span></span>
+      </div>
       <div id="decisionsContainer"></div>
     </div>
   </section>
 
-  <section class="scorebar" id="scorebar" aria-label="Your record for this scenario and country">
-    <div><div class="stat num" id="statRunning">100.0</div><div class="stat-label">Latest decision score</div></div>
-    <div><div class="stat num" id="statBest">None</div><div class="stat-label">Best single decision</div></div>
-    <div><div class="stat num" id="statAttempts">0</div><div class="stat-label">Decisions made here</div></div>
+  <section class="finish" id="finishCard" aria-labelledby="finishHeading" tabindex="-1">
+    <h2 id="finishHeading">That is the whole scenario</h2>
+    <p class="lede" id="finishLede"></p>
+    <div class="final-score">
+      <span class="n num" id="finalScore">0</span><span class="of">out of 100</span>
+      <span class="best" id="finalBest"></span>
+    </div>
+    <div class="finish-list" id="finishList"></div>
+    <div id="finishTripped"></div>
+    <div class="streak-line" id="finishStreak"></div>
+    <div class="finish-actions">
+      <button class="btn btn-primary" id="playAgainBtn" onclick="loadScenario()">Play this again</button>
+      <button class="btn-sm" type="button" onclick="focusCountry()"><i class="ph ph-globe-hemisphere-west" aria-hidden="true"></i>Try another country</button>
+    </div>
+  </section>
+
+  <section class="scorebar" id="scorebar" aria-label="Your record for this scenario and country" aria-live="polite">
+    <div><div class="stat num" id="statRunning">100.0</div><div class="stat-label">This sitting, out of 100</div></div>
+    <div><div class="stat num" id="statBest">None yet</div><div class="stat-label">Your best here</div></div>
+    <div><div class="stat num" id="statAttempts">0</div><div class="stat-label">Sittings finished here</div></div>
   </section>
 </div>
 
@@ -505,7 +554,10 @@ footer{padding:56px 20px 40px;color:var(--muted);font-size:.86rem;text-align:cen
 <script>
 const API = window.location.origin;
 let currentScenario = null;
+let currentRun = null;           // the sitting in progress, owned by the server
 let decisionIndex = new Map();   // decision id -> card index (ids never go into element ids)
+const RUN_KEY = 'erpsim.run';    // so a reload resumes the sitting instead of losing it
+const PICK_KEY = 'erpsim.pick';  // and comes back to the same name, scenario and country
 
 /* ---------------- shared helpers ---------------- */
 function esc(t){ return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -989,9 +1041,10 @@ async function checkMemory(){
     const r = await fetch(`${API}/learners/${encodeURIComponent(learnerId)}/progress/${encodeURIComponent(templateId)}?locale=${encodeURIComponent(locale)}`);
     if(!r.ok){ strip.classList.remove('show'); return; }
     const d = await r.json();
-    if(d.attempts > 0){
-      const n = d.attempts;
-      let html = `Welcome back, <b>${esc(learnerId)}</b>. You have made <b class="num">${esc(n)}</b> decision${n===1?'':'s'} in this scenario in ${esc(countryName(locale))}. Best single decision: <b class="num">${esc(d.best_score)}</b>.`;
+    if(d.runs_completed > 0){
+      const n = d.runs_completed;
+      let html = `Welcome back, <b>${esc(learnerId)}</b>. You have finished this scenario in ${esc(countryName(locale))} <b class="num">${esc(n)}</b> time${n===1?'':'s'}. Best score: <b class="num">${esc(d.best_run_score)}</b> out of 100.`;
+      if(d.current_streak > 1) html += ` You are on a <b class="num">${esc(d.current_streak)}</b> day streak.`;
       if(d.last_mistake) html += `<span class="tripped">Last time this tripped you up: ${esc(d.last_mistake)}</span>`;
       document.getElementById('memoryText').innerHTML = html;
       strip.classList.add('show');
@@ -1006,6 +1059,7 @@ async function loadScenario(){
   const locale = document.getElementById('localeSelect').value;
   const seed = Math.floor(Math.random()*1000);
   const btn = document.getElementById('beginBtn');
+  document.getElementById('finishCard').classList.remove('show');
   const block = document.getElementById('scenarioBlock');
   const skeleton = document.getElementById('scenarioSkeleton');
   const empty = document.getElementById('learnerEmpty');
@@ -1014,14 +1068,20 @@ async function loadScenario(){
   // Only show the skeleton if the wait is noticeable, so fast loads never flash.
   const skTimer = setTimeout(()=>{ block.classList.remove('show'); skeleton.hidden = false; }, 180);
   try{
+    const learnerId = document.getElementById('learnerId').value.trim();
     const body = new URLSearchParams({template_id: templateId, locale, seed});
-    const r = await apiFetch('/scenarios/generate', {method:'POST', body}, loadScenario);
+    if(learnerId) body.set('learner_id', learnerId);
+    const r = await apiFetch('/runs', {method:'POST', body}, loadScenario);
     if(!r.ok){ showStatus('fail', 'Could not start that scenario: ' + ((await r.json()).detail || r.status)); return; }
-    const s = await r.json();
-    currentScenario = s;
+    rememberPick();
+    const started = await r.json();
+    currentScenario = started.scenario;
+    currentRun = started.run;
+    rememberRun();
+    const s = currentScenario;
     clearTimeout(skTimer); skeleton.hidden = true;
     renderScenario(s);
-    document.getElementById('statRunning').textContent = '100.0';
+    renderRunState();
     const title = document.getElementById('scenarioTitle');
     title.setAttribute('tabindex','-1'); title.focus({preventScroll:true});
     block.scrollIntoView({behavior:'smooth', block:'start'});
@@ -1068,18 +1128,16 @@ function renderScenario(s){
 }
 
 async function makeDecision(decisionId, choice){
-  if(!currentScenario) return;
+  if(!currentScenario || !currentRun) return;
   const idx = decisionIndex.get(decisionId);
   const buttons = document.querySelectorAll(`#cardInner-${idx} .card-front .opt`);
   buttons.forEach(b => b.disabled = true);   // one answer per card, no double submit
   const learnerId = document.getElementById('learnerId').value.trim() || null;
   try{
-    const body = new URLSearchParams({
-      template_id: currentScenario.template_id, locale: currentScenario.locale_id,
-      seed: currentScenario.seed, decision_id: decisionId, choice,
-    });
+    const body = new URLSearchParams({decision_id: decisionId, choice});
     if(learnerId) body.set('learner_id', learnerId);
-    const r = await apiFetch('/decisions/score', {method:'POST', body}, () => makeDecision(decisionId, choice));
+    const r = await apiFetch(`/runs/${encodeURIComponent(currentRun.run_id)}/decisions`,
+                             {method:'POST', body}, () => makeDecision(decisionId, choice));
     if(!r.ok){
       showStatus('fail', 'Could not score that decision: ' + ((await r.json()).detail || r.status));
       buttons.forEach(b => b.disabled = false);
@@ -1087,16 +1145,141 @@ async function makeDecision(decisionId, choice){
     }
     const result = await r.json();
     revealCard(decisionId, result);
-    // Score comes from the API, never computed here (ENGINEERING.md #6).
-    document.getElementById('statRunning').textContent = result.running_score.toFixed(1);
+    // Every number comes from the API, never computed here (ENGINEERING.md #6).
+    currentRun.decisions_answered = result.decisions_answered;
+    currentRun.score_so_far = result.score_so_far;
+    renderRunState();
+    document.getElementById('statRunning').textContent = result.score_so_far.toFixed(1);
     document.getElementById('scorebar').classList.add('show');
-    await refreshScorebar(learnerId, currentScenario.template_id, currentScenario.locale_id);
+    if(result.remaining_decision_ids.length === 0) await finishRun();
+    else await refreshScorebar(learnerId, currentScenario.template_id, currentScenario.locale_id);
   }catch(e){
     buttons.forEach(b => b.disabled = false);   /* status strip already shows the honest state */
   }
 }
 
-function revealCard(decisionId, result){
+/* ---- the end of the sitting: a score for the whole scenario ---- */
+async function finishRun(){
+  const learnerId = document.getElementById('learnerId').value.trim() || null;
+  const body = new URLSearchParams();
+  if(learnerId) body.set('learner_id', learnerId);
+  try{
+    const r = await apiFetch(`/runs/${encodeURIComponent(currentRun.run_id)}/complete`,
+                             {method:'POST', body}, finishRun);
+    if(!r.ok) return;
+    const summary = await r.json();
+    forgetRun();
+    renderFinish(summary);
+    await refreshScorebar(learnerId, currentScenario.template_id, currentScenario.locale_id);
+  }catch(e){}
+}
+
+function renderRunState(){
+  const el = document.getElementById('runProgress');
+  if(!currentRun){ el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  const done = currentRun.decisions_answered, total = currentRun.decisions_total;
+  document.getElementById('runProgressText').textContent =
+    done >= total ? `All ${total} answered` : `Decision ${done + 1} of ${total}`;
+  document.getElementById('runProgressFill').style.width = `${Math.round(done / total * 100)}%`;
+}
+
+function renderFinish(summary){
+  const card = document.getElementById('finishCard');
+  document.getElementById('finalScore').textContent = summary.final_score;
+  document.getElementById('finishLede').textContent =
+    `${currentScenario.title}, played in ${countryName(currentScenario.locale_id)}.`;
+  const best = summary.record ? summary.record.best_run_score : null;
+  document.getElementById('finalBest').innerHTML = best === null ? '' :
+    `<b class="num">${esc(best)}</b>your best here`;
+
+  document.getElementById('finishList').innerHTML = summary.decisions.map(d=>{
+    const label = (currentScenario.decisions.find(x=>x.id===d.decision_id)||{}).label || d.decision_id;
+    const cls = d.score_delta > 0 ? 'pos' : (d.score_delta < 0 ? 'neg' : '');
+    return `<div class="finish-row">
+      <span class="d ${cls}">${d.score_delta > 0 ? '+' : ''}${esc(d.score_delta)}</span>
+      <span class="what"><b>${esc(label)}</b><span>You chose ${esc(String(d.choice).replace(/_/g,' '))}. ${esc(d.justification[0] || '')}</span></span>
+    </div>`;
+  }).join('');
+
+  const worst = summary.biggest_mistake;
+  const worstLabel = worst && ((currentScenario.decisions.find(x=>x.id===worst.decision_id)||{}).label || worst.decision_id);
+  document.getElementById('finishTripped').innerHTML = worst
+    ? `<p class="tripped-card"><b>What cost you most.</b> ${esc(worstLabel)} You chose ${esc(String(worst.choice).replace(/_/g,' '))}, and it cost ${esc(Math.abs(worst.score_delta))} points.</p>`
+    : `<p class="tripped-card"><b>Nothing went against you.</b> Every choice in this sitting gained ground.</p>`;
+
+  const rec = summary.record;
+  document.getElementById('finishStreak').innerHTML = !rec ? '' : `
+    <span><b class="num">${esc(rec.runs_completed)}</b>finished here</span>
+    <span><b class="num">${esc(rec.current_streak)}</b>day streak</span>
+    <span><b class="num">${esc(rec.longest_streak)}</b>best streak</span>`;
+
+  card.classList.add('show');
+  card.focus({preventScroll:true});
+  card.scrollIntoView({behavior:'smooth', block:'start'});
+  announce(`Scenario complete. You scored ${summary.final_score} out of 100.`);
+}
+
+function focusCountry(){
+  const sel = document.getElementById('localeSelect');
+  sel.focus(); sel.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+/* ---- resume: the run lives on the server, so a reload carries on ---- */
+function rememberRun(){
+  try{ localStorage.setItem(RUN_KEY, currentRun.run_id); }catch(e){}
+}
+function forgetRun(){
+  try{ localStorage.removeItem(RUN_KEY); }catch(e){}
+}
+
+/* What the learner last chose. Convenience only: their record lives on the
+   server, this just saves re-picking it (PRODUCT.md #3). */
+function rememberPick(){
+  try{
+    localStorage.setItem(PICK_KEY, JSON.stringify({
+      learner: document.getElementById('learnerId').value.trim(),
+      template: document.getElementById('templateSelect').value,
+      locale: document.getElementById('localeSelect').value,
+    }));
+  }catch(e){}
+}
+function restorePick(){
+  let pick = null;
+  try{ pick = JSON.parse(localStorage.getItem(PICK_KEY) || 'null'); }catch(e){}
+  if(!pick) return;
+  const tSel = document.getElementById('templateSelect'), lSel = document.getElementById('localeSelect');
+  if(pick.learner) document.getElementById('learnerId').value = pick.learner;
+  if([...tSel.options].some(o=>o.value===pick.template)) tSel.value = pick.template;
+  if([...lSel.options].some(o=>o.value===pick.locale)) lSel.value = pick.locale;
+}
+async function resumeRun(){
+  let runId = null;
+  try{ runId = localStorage.getItem(RUN_KEY); }catch(e){}
+  if(!runId) return false;
+  try{
+    const r = await fetch(`${API}/runs/${encodeURIComponent(runId)}`);
+    if(!r.ok){ forgetRun(); return false; }
+    const body = await r.json();
+    if(body.run.complete){ forgetRun(); return false; }
+    currentScenario = body.scenario;
+    currentRun = body.run;
+    document.getElementById('templateSelect').value = body.run.template_id;
+    document.getElementById('localeSelect').value = body.run.locale;
+    if(body.run.learner_id) document.getElementById('learnerId').value = body.run.learner_id;
+    renderScenario(currentScenario);
+    renderRunState();
+    for(const d of body.run.decisions) revealCard(d.decision_id, d, {silent:true});
+    document.getElementById('statRunning').textContent = body.run.score_so_far.toFixed(1);
+    document.getElementById('scorebar').classList.add('show');
+    showStatus('wait', 'Picked up where you left off.');
+    setTimeout(hideStatus, 3000);
+    return true;
+  }catch(e){ return false; }
+}
+
+function revealCard(decisionId, result, opts){
+  const silent = opts && opts.silent;
   const idx = decisionIndex.get(decisionId);
   const inner = document.getElementById(`cardInner-${idx}`);
   const front = inner.querySelector('.card-front');
@@ -1113,8 +1296,10 @@ function revealCard(decisionId, result){
   front.inert = true; front.setAttribute('aria-hidden','true');
   back.removeAttribute('aria-hidden'); back.tabIndex = -1;
   requestAnimationFrame(()=> inner.classList.add('flipped'));
-  back.focus({preventScroll:true});
-  announce(`${sign}${delta} points. ${reason || ''}`);
+  if(!silent){
+    back.focus({preventScroll:true});
+    announce(`${sign}${delta} points. ${reason || ''}`);
+  }
 }
 
 async function refreshScorebar(learnerId, templateId, locale){
@@ -1123,8 +1308,8 @@ async function refreshScorebar(learnerId, templateId, locale){
     const r = await fetch(`${API}/learners/${encodeURIComponent(learnerId)}/progress/${encodeURIComponent(templateId)}?locale=${encodeURIComponent(locale)}`);
     const d = await r.json();
     document.getElementById('scorebar').classList.add('show');
-    document.getElementById('statBest').textContent = d.best_score ?? 'None';
-    document.getElementById('statAttempts').textContent = d.attempts ?? 0;
+    document.getElementById('statBest').textContent = d.best_run_score ?? 'None yet';
+    document.getElementById('statAttempts').textContent = d.runs_completed ?? 0;
   }catch(e){}
 }
 
@@ -1142,10 +1327,12 @@ document.getElementById('locTabs').addEventListener('click', e=>{
   if(b) pickLocale(b.dataset.locale);
 });
 
-populateSelectors().then(checkMemory);
-document.getElementById('learnerId').addEventListener('change', checkMemory);
-document.getElementById('templateSelect').addEventListener('change', checkMemory);
-document.getElementById('localeSelect').addEventListener('change', checkMemory);
+populateSelectors()
+  .then(() => { restorePick(); })
+  .then(async () => { if(!await resumeRun()) await checkMemory(); });
+document.getElementById('learnerId').addEventListener('change', () => { rememberPick(); checkMemory(); });
+document.getElementById('templateSelect').addEventListener('change', () => { rememberPick(); checkMemory(); });
+document.getElementById('localeSelect').addEventListener('change', () => { rememberPick(); checkMemory(); });
 </script>
 </body>
 </html>
