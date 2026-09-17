@@ -21,3 +21,23 @@
   (11) learner ids and config ids validated, no path joins from input.
   Tests 14 -> 65. `make check` = pytest + ROOTS gate. Git history begins
   at the v0.2.0 baseline.
+- 2026-09-17 v0.4.0 — Instructor authoring surface (PRODUCT.md #5). The
+  YAML textarea is replaced by a real builder: a shelf of published
+  scenarios, a guided form (the situation / the decisions / what it
+  measures), and a live preview that renders the draft in every country
+  exactly as a learner will see it, with a strip that says plainly
+  whether the scenario is genuinely localized or scores the same
+  everywhere. Instructors write points and a reason in plain language
+  with [country]-style tokens; they never see multiply_by, kpi_weights
+  or a format spec. Publishing writes config/templates/{id}.yaml and
+  archives any version it replaces, so adding an industry is still
+  adding a config file (ENGINEERING.md #2) — just not by hand.
+  New: src/erpsim/authoring.py, GET /instructor/templates, GET
+  /instructor/drafts/{id}, POST /instructor/drafts/preview, POST
+  /instructor/drafts/publish. generator.generate_from() previews an
+  unsaved draft without touching config/. Scoring gained {delta} and
+  {tax_percent} so authored reasons need no format specs.
+  Tests 66 -> 110, including 5 Chromium tests that author, publish, play
+  and re-edit a scenario through the UI alone (BREAK.md hat 2, answered).
+  DEBT.md: instructor-authoring row repaid and removed; two new rows
+  logged (unauthenticated publishing, no locale authoring surface).

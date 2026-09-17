@@ -15,7 +15,7 @@ generate and score through the API with src/ untouched.
 ## Run it
     python3 -m venv .venv && source .venv/bin/activate
     pip install -e ".[dev]" httpx
-    make check                                # 65 tests, then the ROOTS gate
+    make check                                # 110 tests, then the ROOTS gate
     uvicorn erpsim.main:app --reload --app-dir src
     # open http://127.0.0.1:8000  <- the frontend, served automatically
 
@@ -30,9 +30,30 @@ citing the exact locale rule that produced it. Return with the same name,
 template and country and the product greets you with your own history:
 attempts, best score, and what tripped you up last time. If the API
 drops mid-scenario you see an honest "retrying" strip, not a broken card,
-and your scenario stays on screen. Toggle to Instructor to see the
-template x locale catalog and validate a new template before publishing
-it — it's still a YAML file underneath (DEBT.md row 2 is honest about that).
+and your scenario stays on screen.
+
+## Instructors author scenarios, they don't edit config
+Toggle to Instructor. You get a shelf of what's published and a builder
+that asks for the situation, the decisions, and what the scenario
+measures — in those words. You write what each choice costs and why, and
+say whether the local market changes it; you never meet a format spec, a
+weight that must sum to 1.0, or the word `multiply_by`.
+
+The panel beside the form renders your draft in every country as the
+learner will see it, and tells you plainly whether it is genuinely
+localized or scores the same everywhere. Publishing is one button and
+writes `config/templates/{id}.yaml` — adding an industry is still adding
+a config file (ENGINEERING.md #2), just not by hand. Replacing a
+scenario keeps the version you replaced.
+
+Prove it without reading the code:
+
+    pip install -e ".[ui]" && playwright install chromium
+    pytest tests/test_builder_browser.py -v
+
+Five Chromium tests author a scenario through the UI alone, publish it,
+play it as a learner in Brazil, and reopen it for editing. They skip
+loudly if Playwright is missing — a skip means unverified, not passed.
 
 ## Try it
     curl http://127.0.0.1:8000/catalog
@@ -62,7 +83,8 @@ it — it's still a YAML file underneath (DEBT.md row 2 is honest about that).
 Add one YAML file. config/locales/ for a country, config/templates/ for an
 industry. Zero code changes — see BLUEPRINT-MAP.md and rules/ENGINEERING.md Rule 2.
 
-A template carries its own scoring: every option declares `points`, a
+You can also write the file by hand. A template carries its own scoring:
+every option declares `points`, a
 `reason` template (may reference locale, currency, choice, points and any
 locale_rules field), and optionally `multiply_by` one locale_rules field
 so the same choice scores differently per country. Validation fails loud

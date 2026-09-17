@@ -15,6 +15,13 @@ in DEBT.md (Item | Found | Repay trigger | Owner) — never ship an unlogged kno
 - Can an instructor with no coding background author a valid template
   through the UI alone, today? If the honest answer needs a YAML tutorial,
   the authoring flow (PRODUCT.md #5) is not built, only stubbed.
+  Answered as of v0.4.0: tests/test_builder_browser.py authors, publishes
+  and plays a scenario through the UI in a real browser. Re-run it after
+  any change to static/index.html or src/erpsim/authoring.py — if it
+  starts needing the YAML disclosure to pass, the answer has quietly
+  gone back to no.
+- Can that instructor author a COUNTRY? Not yet (DEBT.md). Watch for the
+  day a prospect asks for one in the demo.
 
 ## 3 — The Thief: how would someone abuse or break this?
 - Submit a decision for a template/locale combination that doesn't exist —
