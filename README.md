@@ -43,7 +43,7 @@ to try, but it's still a YAML file underneath (ENGINEERING.md #2).
 
 ## Adding a country or an industry
 Add one YAML file. config/locales/ for a country, config/templates/ for an
-industry. Zero code changes — see BLUEPRINT-MAP.md and rules/RULES.md Rule 2.
+industry. Zero code changes — see BLUEPRINT-MAP.md and rules/ENGINEERING.md Rule 2.
 
 ## What's deliberately NOT built yet
 The AI tutor "conversation" layer (Frank's gap in his own Lovable MVP).

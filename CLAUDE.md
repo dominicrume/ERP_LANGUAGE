@@ -17,7 +17,7 @@ rules/ENGINEERING.md, rules/PRODUCT.md, rules/SCALING.md, and BREAK.md before an
 | `serve-frontend`     | `static/`    | n/a (static)   |
 
 ## Facts (single source of truth)
-- Code: src/erpsim/. DB: Postgres via SQLModel.
+- Code: src/erpsim/. DB: SQLModel — SQLite by default, Postgres via ERPSIM_DATABASE_URL.
 - Localization rules: config/locales/*.yaml — ONE FILE PER COUNTRY.
   A new country is a new config file, never new code.
 - Scenario templates: config/templates/*.yaml — ONE FILE PER INDUSTRY.

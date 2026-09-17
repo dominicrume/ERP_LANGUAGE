@@ -2,7 +2,7 @@
 
 Standing KYA Step 2 (Attack). Before any release, run these five hats
 against the current build. Fix what breaks. Log what you can't fix yet
-in DEBT.md with a repay trigger — never ship an unlogged known break.
+in DEBT.md (Item | Found | Repay trigger | Owner) — never ship an unlogged known break.
 
 ## 1 — The Planner: is the shape even right?
 - Does the localization thesis (test_localization_is_not_just_translation)
