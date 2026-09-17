@@ -196,3 +196,17 @@ def test_the_finished_card_survives_dark_mode_and_a_phone(browser_and_url):
         return r.width > 0 && r.left >= 0 && r.right <= window.innerWidth + 1 }""")
     assert not page.errors, page.errors
     ctx.close()
+
+
+def test_the_learner_is_shown_what_the_scenario_is_judged_on(browser_and_url):
+    """CONTEXT.md gap H. The weights decide the score, so grading a learner
+    against measures they cannot see is no longer acceptable."""
+    browser, url = browser_and_url
+    ctx, page = _page(browser, url)
+    _begin(page, learner="gil")
+    judged = page.locator("#judgedOn").inner_text()
+    assert "Judged on" in judged
+    for measure, weight in (("cash position", "40%"), ("customer satisfaction", "35%"),
+                            ("overhead cost", "25%")):
+        assert measure in judged and weight in judged, judged
+    ctx.close()

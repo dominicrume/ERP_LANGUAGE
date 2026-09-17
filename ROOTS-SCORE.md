@@ -1,4 +1,4 @@
-# ROOTS-SCORE — ERP Decision Lab v0.4.0 · scored 2026-09-17 · owner: Rume
+# ROOTS-SCORE — ERP Decision Lab v1.0.0 · scored 2026-09-18 · owner: Rume
 | # | Check | State | Pointer | Waiver |
 |---|-------|-------|---------|--------|
 | 1 | Written rules | ROOTED | rules/ENGINEERING.md, PRODUCT.md, SCALING.md, BREAK.md, DEBT.md + root CLAUDE.md | |
@@ -7,10 +7,10 @@
 | 4 | Planning [HV] | ROOTED | instructor builder ships: shelf + guided authoring + cross-locale preview + publish (static/index.html, src/erpsim/authoring.py), proven in Chromium by tests/test_builder_browser.py | |
 | 5 | Exit criteria | ROOTED | Completion clause in every CONTEXT.md; PROMPT-01 §5 exit criteria all met by tests | |
 | 6 | Context discipline | ROOTED | L1 tables x4; frontend calls API only — tests/test_frontend_contract.py greps for zero scoring/locale arithmetic in JS | |
-| 7 | Sandboxing [HV] | SEEDLING | | Rume 2026-09-16: single-process v0.1; per-tenant isolation at 2nd paying institution (SCALING.md #4) |
-| 8 | Trajectory [HV] | ROOTED | last_mistake now actually written (tests/test_api.py::test_negative_decision_records_last_mistake) and shown in the welcome strip | |
+| 7 | Sandboxing [HV] | SEEDLING | | Rume 2026-09-18: single-process v1.0; per-tenant isolation at 2nd paying institution (SCALING.md #4) |
+| 8 | Trajectory [HV] | ROOTED | a run records every decision with its reason, completes with a final score, and feeds runs_completed, best_run_score and a streak (tests/test_runs.py, tests/test_learner_run_browser.py) | |
 | 9 | Guardrails | ROOTED | choice/decision/id validation 422/404; broken config file isolated (tests/test_broken_config.py); template scoring validated at authoring time | |
-| 10 | Verification | ROOTED | tests/ 123 tests incl. golden scoring regression, zero-code growth proof, 6 real-browser authoring tests (incl. stored-XSS probe) and 6 real-browser UI-quality tests (contrast, layout, focus, touch targets, light + dark); scripts/check.sh gate | |
-| 11 | Grounding [HV] | ROOTED | every option's reason template cites locale fields (tests/test_scoring.py::test_every_option_of_every_template_scores_with_a_reason); shown verbatim in UI | |
-| 12 | CI/CD [HV] | SEEDLING | scripts/check.sh + `make check` (pytest then check_roots.py, non-zero on failure) | Rume 2026-09-17: no hosted CI/remote yet — DEBT.md row 2; wire before first external pilot |
-| 13 | Feedback [HV] | ROOTED | attempts, best score and last mistake recorded per learner x template x locale -> visible memory strip on return | |
+| 10 | Verification | ROOTED | tests/ 203 tests: two scoring goldens (legacy + weighted), zero-code growth, migration upgrade of a seeded v0.4 database, 18 real-browser tests across learner sittings, authoring, stored-XSS and UI quality in light and dark; scripts/check.sh gate proves migrations too | |
+| 11 | Grounding [HV] | ROOTED | every score carries its reason and now its per-KPI arithmetic, whose rows add up to the delta (tests/test_kpi_weighting.py); shown verbatim in the card and the completion summary | |
+| 12 | CI/CD [HV] | ROOTED | .github/workflows/check.yml runs scripts/check.sh (migrations, 203 tests incl. Chromium, ROOTS) on every push and pull request to github.com/dominicrume/ERP_LANGUAGE | |
+| 13 | Feedback [HV] | ROOTED | finished sittings, best run, streak and last mistake per learner x template x locale -> completion card at the end and welcome strip on return | |

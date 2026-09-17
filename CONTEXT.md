@@ -5,8 +5,9 @@ CLAUDE.md routes an agent to a workspace; this file says what the product
 is, what is actually true today, and what is left. Stage files own their
 own contracts — this file never restates them, it points at them.
 
-Scored 2026-09-17 against v0.4.1 (GitHub: dominicrume/ERP_LANGUAGE). Every
-claim below was run, not read. The command that proves each one is named beside it.
+Scored 2026-09-18 against v1.0.0 (GitHub: dominicrume/ERP_LANGUAGE). Every
+claim below was run, not read. The command that proves each one is named
+beside it, and the same gate runs on every push.
 
 ---
 
@@ -28,7 +29,7 @@ the session.
 A learner can finish a scenario and be told how they did, an instructor can
 author one without an engineer, and a buyer can watch the same scenario
 behave differently in four countries on demand.
-**Two of those three are true today. The first is not.** See below.
+**All three are true as of v1.0.0.** What is left is in the last section.
 
 ---
 
@@ -36,8 +37,8 @@ behave differently in four countries on demand.
 
 | Audience | What they need to believe | Status |
 |---|---|---|
-| Learner | "This taught me something about operating in Nigeria." | Partly — decisions teach, the run never concludes |
-| Instructor | "I can write my own scenario without an engineer." | True as of v0.4.0, browser-proven |
+| Learner | "This taught me something about operating in Nigeria." | True: a sitting starts, accumulates and ends with a score and a reason for each decision |
+| Instructor | "I can write my own scenario without an engineer." | True as of v0.4.0, browser-proven; authors KPI impacts as of v1.0.0 |
 | Buyer / funder | "Localization is real business logic, not a UI skin." | True and demonstrable in one command |
 
 ---
@@ -48,12 +49,14 @@ behave differently in four countries on demand.
 |---|---|---|
 | API | `src/erpsim/main.py` | 11 endpoints, all reachable |
 | Scenario engine | `generator.py`, `templates.py`, `locales.py` | Deterministic per seed |
-| Scoring | `scoring.py` | Interpreter over template data. **Per-decision only** |
-| Learner memory | `memory.py` | SQLModel, keyed learner × template × locale |
+| Scoring | `scoring.py` | Interpreter over template data, weighted by the template's own KPIs |
+| Sittings | `runs.py` | A run: starts, accumulates, completes with a final score |
+| Learner memory | `memory.py` | Completed runs, best run, streak, keyed learner × template × locale |
+| Schema | `migrations.py` | Numbered migrations, version table, applied at startup |
 | Authoring | `authoring.py` | Draft → validate → preview → publish |
 | Frontend | `static/index.html` (single file, tokens, light + dark) | Learner view + instructor builder |
-| Database | SQLite via `ERPSIM_DATABASE_URL` | **No migration tooling** |
-| Gate | `scripts/check.sh` / `make check` | pytest + ROOTS, non-zero on failure |
+| Database | SQLite via `ERPSIM_DATABASE_URL` | Versioned, unique per learner × template × locale |
+| Gate | `scripts/check.sh` / `make check` | migrations + pytest + ROOTS, also on every push (GitHub Actions) |
 
 Content that grows without code: `config/locales/*.yaml` (4 countries),
 `config/templates/*.yaml` (2 industries). 2 × 4 = 8 playable combinations.
@@ -76,70 +79,32 @@ Content that grows without code: `config/locales/*.yaml` (4 countries),
 | 10 | DSN is runtime config, SQLite → Postgres by swap | `pytest tests/test_config.py` |
 | 11 | Authored text can never run as script for a learner | `tests/test_builder_browser.py::test_authored_text_can_never_run_as_script_in_a_learners_browser` |
 | 12 | Contrast, layout, focus and touch targets hold in light and dark, desktop and phone | `pytest tests/test_ui_quality_browser.py` |
+| 13 | A sitting starts, accumulates and finishes, and the score is the sum of its decisions | `pytest tests/test_runs.py` |
+| 14 | A learner plays a whole scenario in a browser and is told how they did | `pytest tests/test_learner_run_browser.py` |
+| 15 | Changing a KPI weight in the YAML changes the score, with no code change | `pytest tests/test_kpi_weighting.py` |
+| 16 | A record counts finished sittings, with a streak that survives month and year ends | `pytest tests/test_memory.py` |
+| 17 | A seeded v0.4 database upgrades with the learner's data intact | `pytest tests/test_migrations.py` |
+| 18 | Nobody plays in another learner's sitting, answers twice, or finishes early | `pytest tests/test_runs.py -k "cannot or another"` |
 
-123 tests. `make check` is green.
-
----
-
-## What is BROKEN (each reproduced on 2026-09-17)
-
-These are not opinions. The probe output is in the session that wrote this file.
-
-**A. "Running score" does not run. — P0, the product lies on screen.**
-Each decision is scored independently as `100 + points`. Score decision one
-(+8) and the API says 108. Score decision two (−32) and it says 68, not 76.
-Until v0.4.1 the score bar labelled this "Running score"; it now honestly
-says "Latest decision score", but the model underneath is still per-decision. A learner
-who makes two decisions is shown a number that silently discards the first.
-`src/erpsim/scoring.py` line ~44 returns `base = 100.0 + points`.
-
-**B. "Attempts" counts decisions, not runs. — P0, the memory strip misleads.**
-One learner, one scenario, two decisions, and the record says `attempts=2`,
-`best_score=108.0`. `best_score` is therefore the best *single decision*
-ever made, not the best run — and it can exceed 100, which is meaningless
-to a learner. Since v0.4.1 the welcome strip says so honestly ("you have
-made 2 decisions ... best single decision"), but there is still no record of
-a completed sitting to show.
-
-**C. `kpi_weights` is dead data. — P1, the product is hollow where it matters.**
-Every template declares what it measures and the weights are validated to
-sum to 1.0. `grep -rn kpi_weights src/erpsim/` shows they are shipped in
-the scenario payload and **never multiply anything**. Change any weight and
-no score moves. For a decision-support trainer this is the centre of the
-product, and it is inert.
-
-**D. A scenario never finishes. — P0.**
-There is no session id, no `/scenarios/complete`, no final score, no
-summary. A learner turns over the cards and the screen simply stops.
-Nothing tells them how they did overall or what to do next.
-
-**E. No streak. — P1, PRODUCT.md #4 names it explicitly.**
-Nothing in the data model or the frontend tracks one. PRODUCT.md #4 requires
-"a visible best-score, a streak, and an honest 'here's what tripped you up'".
-Two of three exist.
-
-**F. No database migration path. — P1, first deploy hazard.**
-`SQLModel.metadata.create_all()` creates missing tables and nothing else.
-Proven: seeding a pre-v0.3 database and starting v0.4 leaves the v0.3
-indexes uncreated. It happens to work today only because the column set did
-not change. The next schema change to `LearnerProgress` silently corrupts or
-ignores existing learner data. There is no Alembic, no versioning, no
-`scripts/migrate`.
-
-**G. No unique constraint on the learner record. — P2, latent.**
-`LearnerProgress` indexes `learner_id`, `template_id` and `locale`
-separately but has no `UNIQUE` across the three. `record_attempt` does a
-read-then-write with no constraint behind it, and `recall` takes `.first()`.
-Under SQLite's serialization I could not reproduce a duplicate, so this is a
-latent risk rather than a live bug — but it becomes real on Postgres
-(SCALING.md #1), where two requests can genuinely interleave, and the
-second row would be invisible to every later read.
-
-**H. The learner is never shown what is being measured. — P2.**
-`kpi_weights` never reaches the learner's screen. They are scored against
-priorities they cannot see.
+203 tests. `make check` is green locally and on GitHub Actions.
 
 ---
+
+## What is BROKEN
+
+Nothing in the learner or instructor path that I can reproduce. The eight
+defects this file recorded on 2026-09-17 (A to H) are closed and each has a
+test named above. What is left is deliberate deferral, recorded in DEBT.md
+and summarised next, plus these honest limits:
+
+- **A score above 100 is clamped, not banked.** A generous run can exceed
+  100 internally; the learner is shown 100 and the raw total sits beside it
+  in the API. If that ever needs to read differently, change `runs.clamp`.
+- **Scores changed at v1.0.0.** KPI weighting moved every number. A learner
+  who played before the change cannot compare their old best with a new one.
+  The old goldens are kept so the change stays visible, not silent.
+- **Abandoned sittings are never cleaned up.** Harmless at demo scale,
+  unbounded over a term (DEBT.md).
 
 ## What is NOT BUILT (and whether that is correct)
 
@@ -156,25 +121,23 @@ priorities they cannot see.
 
 ## What is LEFT, in the order it should be done
 
-1. **Make a run a real thing** (gaps A, B, D). A scenario run gets an id,
-   accumulates decisions, and completes with a final score. Memory keys on
-   completed runs. This unblocks everything else, including the tutor layer.
-2. **Make `kpi_weights` load-bearing** (gaps C, H). An option's impact is
-   expressed per KPI; the final score is the weighted sum; the learner sees
-   the breakdown. This is what makes it decision-*support* training.
-3. **Streak and honest progress** (gap E).
-4. **Schema versioning** (gaps F, G) before anyone's data matters.
-5. **Repay DEBT.md** in its stated trigger order.
-
-`PROMPT-02.md` is the autonomous brief for exactly this, with exit criteria.
-
----
+1. **Identity.** A learner is still just a typed name, and anyone can read
+   anyone's record or publish a scenario. This is the one thing that blocks
+   hosting the app anywhere a cohort can reach it.
+2. **Locale authoring.** A country is still a hand-written YAML file. The
+   day a prospect asks for a country we do not ship, this becomes urgent.
+3. **The AI tutor layer.** Now unblocked: a run records every decision, its
+   reason and a final score, which is exactly the grounding BLUEPRINT-MAP.md
+   said the chat layer must sit on top of. Cost it per learner-session
+   before it ships (SCALING.md #5).
+4. **Housekeeping.** Abandoned runs, and retiring the deprecated stateless
+   scoring endpoint once nothing calls it.
 
 ## Run it
 
     python3 -m venv .venv && source .venv/bin/activate
     pip install -e ".[ui]" && playwright install chromium
-    make check                                  # 110 tests + ROOTS gate
+    make check                                  # migrations + 203 tests + ROOTS gate
     uvicorn erpsim.main:app --reload --app-dir src
     # http://127.0.0.1:8000
 

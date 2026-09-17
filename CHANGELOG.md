@@ -65,3 +65,31 @@
   github.com/dominicrume/ERP_LANGUAGE, merged with its starter commit, no
   force push.
 
+- 2026-09-18 v1.0.0 — The sitting is the unit. PROMPT-02, items 1 to 7.
+  (1) A scenario run is a real object: it starts, accumulates, and completes
+  with a score for the whole scenario. The number on screen is now the sum
+  of the learner's decisions, not the last one alone, and a run survives a
+  reload. Guards: a decision cannot be answered twice, a run cannot be
+  finished early or twice, and one learner cannot play or finish another's.
+  (2) kpi_weights decide the score. An option states its impact per KPI,
+  optionally scaled by a locale rule; the contribution is the weighted sum.
+  Change a weight in the YAML and the score moves, with no code change.
+  Both shipped templates are migrated. The old unweighted `points` form is
+  still supported and keeps its own golden file; the shipped templates get a
+  new one. Numbers moved deliberately: a scenario scored before v1.0 will
+  not score the same afterwards.
+  (3) A record counts finished sittings, with best completed run and a
+  streak of consecutive calendar days. Pre-v1.0 rows counted decisions, so
+  they start at zero completed runs rather than inheriting a number that
+  would be untrue.
+  (4) Versioned schema in src/erpsim/migrations.py, applied at startup and
+  by scripts/migrate.sh. Duplicate learner rows are merged, then made
+  impossible by a unique index. The gate proves migrations run from nothing
+  and run twice cleanly.
+  (5) The builder authors impacts per measure, refuses a draft that drops
+  the scoring, converts a pre-weighting template on edit, and previews the
+  best and worst score a learner could finish on in each country.
+  (6) The learner view plays a run and ends on a completion card: the final
+  score, every decision with its reason, what cost the most, and the streak.
+  (7) GitHub Actions runs the same gate on every push and pull request.
+  Tests 123 -> 203.

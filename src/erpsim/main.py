@@ -48,7 +48,7 @@ engine = make_engine(database_url())
 # Versioned schema: adds what is missing, never guesses at existing data.
 migrations.migrate(engine)
 
-app = FastAPI(title="ERP Decision Lab", version="0.4.0")
+app = FastAPI(title="ERP Decision Lab", version="1.0.0")
 
 _STATIC_DIR = Path(__file__).resolve().parents[2] / "static"
 if _STATIC_DIR.exists():

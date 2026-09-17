@@ -163,6 +163,9 @@ select{cursor:pointer}
 @media (max-width:520px){.locale-facts{grid-template-columns:minmax(0,1fr)}.locale-facts div{display:flex;justify-content:space-between;align-items:baseline;gap:12px}}
 
 /* skeleton while a scenario loads */
+.judged-on{display:flex;gap:8px 16px;flex-wrap:wrap;align-items:baseline;font-size:.84rem;color:var(--muted);margin:-12px 0 22px}
+.judged-on .lede{font-weight:600;color:var(--text-2)}
+.judged-on .kpi b{font-variant-numeric:tabular-nums;color:var(--text);font-weight:600;margin-right:4px}
 .skeleton-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(20px,4vw,36px);margin-top:28px}
 .skeleton-card[hidden]{display:none}
 .sk{background:var(--surface-3);border-radius:6px;animation:pulse 1.2s ease-in-out infinite}
@@ -420,6 +423,7 @@ footer{padding:56px 20px 40px;color:var(--muted);font-size:.86rem;text-align:cen
       <h2 class="scenario-title" id="scenarioTitle"></h2>
       <p class="scenario-narrative" id="scenarioNarrative"></p>
       <dl class="locale-facts" id="localeFacts"></dl>
+      <p class="judged-on" id="judgedOn"></p>
       <div class="run-progress" id="runProgress">
         <span class="now" id="runProgressText"></span>
         <span class="track"><span class="fill" id="runProgressFill" style="width:0%"></span></span>
@@ -1106,6 +1110,13 @@ function renderScenario(s){
     <div><dt>Tax</dt><dd>${(lr.tax_rate*100).toFixed(1)}% ${esc(lr.tax_type)}</dd></div>
     <div><dt>Expedite freight</dt><dd>${esc(lr.freight_expedite_multiplier)}x cost</dd></div>
     <div><dt>Payment terms</dt><dd>${esc(lr.payment_terms_days)} days</dd></div>`;
+  // What the scenario is judged on. These weights decide the score, so the
+  // learner is shown them rather than graded against something unseen.
+  const weights = s.kpi_weights || {};
+  document.getElementById('judgedOn').innerHTML = Object.keys(weights).length === 0 ? '' :
+    `<span class="lede">Judged on</span>` + Object.entries(weights).map(([k, w]) =>
+      `<span class="kpi"><b>${Math.round(w * 100)}%</b>${esc(String(k).replace(/_/g,' '))}</span>`).join('');
+
   decisionIndex = new Map();
   // Every authored string is escaped: publishing is open (DEBT.md), so it is untrusted.
   document.getElementById('decisionsContainer').innerHTML = s.decisions.map((d,i)=>{
