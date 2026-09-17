@@ -260,3 +260,49 @@ def test_the_same_run_in_four_countries_ends_on_four_different_scores(client, lo
     _play_all(client, run["run_id"], {"customer_allocation": "first_come_first_served",
                                       "freight_choice": "expedite"})
     assert client.post(f"/runs/{run['run_id']}/complete").json()["final_score"] == expected
+
+
+# ---------------------------------------------------------------- the record
+def test_finishing_a_run_updates_the_learners_record(client):
+    run = _start(client, learner_id="amina")["run"]
+    _play_all(client, run["run_id"], {"customer_allocation": "highest_value_first",
+                                      "freight_choice": "expedite"}, learner_id="amina")
+    record = client.post(f"/runs/{run['run_id']}/complete",
+                         data={"learner_id": "amina"}).json()["record"]
+    assert record["runs_completed"] == 1
+    assert record["best_run_score"] == 92.4
+    assert record["current_streak"] == 1 and record["longest_streak"] == 1
+    assert "1.6x" in record["last_mistake"]
+
+    progress = client.get("/learners/amina/progress/heatwave_demand?locale=uk").json()
+    assert progress["runs_completed"] == 1 and progress["best_run_score"] == 92.4
+    assert progress["attempts"] == 0      # the record counts sittings, not clicks
+
+
+def test_an_anonymous_run_leaves_no_record(client):
+    run = _start(client)["run"]
+    _play_all(client, run["run_id"], {"customer_allocation": "highest_value_first",
+                                      "freight_choice": "standard"})
+    body = client.post(f"/runs/{run['run_id']}/complete").json()
+    assert "record" not in body
+    assert client.get("/learners/amina/progress/heatwave_demand").json()["runs_completed"] == 0
+
+
+def test_an_unfinished_run_never_reaches_the_record(client):
+    run = _start(client, learner_id="amina")["run"]
+    _decide(client, run["run_id"], "freight_choice", "expedite", learner_id="amina")
+    client.post(f"/runs/{run['run_id']}/complete", data={"learner_id": "amina"})   # 422
+    p = client.get("/learners/amina/progress/heatwave_demand?locale=uk").json()
+    assert p["runs_completed"] == 0 and p["best_run_score"] is None
+
+
+def test_progress_totals_runs_and_streaks_across_countries(client):
+    for locale in ("uk", "nigeria"):
+        run = _start(client, locale=locale, learner_id="amina")["run"]
+        _play_all(client, run["run_id"], {"customer_allocation": "highest_value_first",
+                                          "freight_choice": "standard"}, learner_id="amina")
+        client.post(f"/runs/{run['run_id']}/complete", data={"learner_id": "amina"})
+    all_of_it = client.get("/learners/amina/progress/heatwave_demand").json()
+    assert all_of_it["runs_completed"] == 2
+    assert all_of_it["current_streak"] == 1
+    assert {r["locale"] for r in all_of_it["by_locale"]} == {"uk", "nigeria"}

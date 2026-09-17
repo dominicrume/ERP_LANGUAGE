@@ -181,11 +181,21 @@ def complete_run(run_id: str, learner_id: Optional[str] = Form(None)):
             raise HTTPException(403, str(e))
         scenario = _scenario_or_404(run.template_id, run.locale, run.seed)
         try:
-            return runs.complete(s, run, scenario)
+            summary = runs.complete(s, run, scenario)
         except runs.RunConflictError as e:
             raise HTTPException(409, str(e))
         except runs.RunIncompleteError as e:
             raise HTTPException(422, str(e))
+        if run.learner_id:
+            mistake = (summary["biggest_mistake"] or {}).get("why")
+            record = memory.record_run(s, run.learner_id, run.template_id, run.locale,
+                                       summary["final_score"], mistake)
+            summary["record"] = {"runs_completed": record.runs_completed,
+                                 "best_run_score": record.best_run_score,
+                                 "current_streak": record.current_streak,
+                                 "longest_streak": record.longest_streak,
+                                 "last_mistake": record.last_mistake}
+        return summary
 
 
 @app.get("/learners/{learner_id}/progress/{template_id}")
@@ -198,12 +208,19 @@ def progress(learner_id: str, template_id: str, locale: Optional[str] = None):
             p = memory.recall(s, learner_id, template_id, locale)
             if not p:
                 return {"learner_id": learner_id, "template_id": template_id, "locale": locale.lower(),
-                        "attempts": 0, "best_score": None, "last_mistake": None, "note": "no attempts yet"}
+                        "attempts": 0, "best_score": None, "runs_completed": 0,
+                        "best_run_score": None, "current_streak": 0, "longest_streak": 0,
+                        "last_mistake": None, "note": "nothing played here yet"}
             return p.model_dump()
         rows = [r.model_dump() for r in memory.recall_all(s, learner_id, template_id)]
         out = {"learner_id": learner_id, "template_id": template_id,
                "attempts": sum(r["attempts"] for r in rows),
                "best_score": max((r["best_score"] for r in rows), default=None),
+               "runs_completed": sum(r["runs_completed"] for r in rows),
+               "best_run_score": max((r["best_run_score"] for r in rows
+                                      if r["best_run_score"] is not None), default=None),
+               "current_streak": max((r["current_streak"] for r in rows), default=0),
+               "longest_streak": max((r["longest_streak"] for r in rows), default=0),
                "by_locale": rows}
         if not rows:
             out["note"] = "no attempts yet"
