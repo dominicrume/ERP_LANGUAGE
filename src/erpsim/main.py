@@ -1,4 +1,4 @@
-"""ERP Decision Lab API — generate, decide, recall, author."""
+"""ERP Decision Lab API: generate, play a run, decide, recall, author."""
 import os
 from typing import Optional
 
@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, SQLModel, create_engine
 
-from erpsim import authoring, generator, locales, memory, scoring, templates
+from erpsim import authoring, generator, locales, memory, runs, scoring, templates
 
 DEFAULT_DATABASE_URL = "sqlite:///erpsim.db"
 LEARNER_ID_MAX = 64
@@ -108,6 +108,84 @@ def score(template_id: str = Form(...), locale: str = Form(...), seed: int = For
         with Session(engine) as s:
             memory.record_attempt(s, learner_id, template_id, locale, result["running_score"], mistake)
     return result
+
+
+# ---------------------------------------------------------------- runs
+def _scenario_or_404(template_id: str, locale: str, seed: int) -> dict:
+    try:
+        return generator.generate(template_id, locale, seed)
+    except (templates.UnknownTemplateError, locales.UnknownLocaleError) as e:
+        raise HTTPException(404, str(e))
+    except templates.InvalidTemplateError as e:
+        raise HTTPException(422, str(e))
+
+
+def _run_or_404(session: Session, run_id: str) -> runs.ScenarioRun:
+    try:
+        return runs.get(session, run_id)
+    except runs.UnknownRunError as e:
+        raise HTTPException(404, str(e))
+
+
+@app.post("/runs")
+def start_run(template_id: str = Form(...), locale: str = Form(...), seed: int = Form(1),
+              learner_id: Optional[str] = Form(None)):
+    """Start one sitting of one scenario. The run is what a score belongs to."""
+    learner_id = clean_learner_id(learner_id)
+    scenario = _scenario_or_404(template_id, locale, seed)
+    with Session(engine) as s:
+        run = runs.start(s, template_id, locale, seed, learner_id)
+        return {"run": runs.state(s, run, scenario), "scenario": scenario}
+
+
+@app.get("/runs/{run_id}")
+def get_run(run_id: str):
+    """Everything about a run, so a learner can reload and carry on."""
+    with Session(engine) as s:
+        run = _run_or_404(s, run_id)
+        scenario = _scenario_or_404(run.template_id, run.locale, run.seed)
+        return {"run": runs.state(s, run, scenario), "scenario": scenario}
+
+
+@app.post("/runs/{run_id}/decisions")
+def decide_in_run(run_id: str, decision_id: str = Form(...), choice: str = Form(...),
+                  learner_id: Optional[str] = Form(None)):
+    """Answer one decision. The reply carries the cumulative score, which is
+    the only score a learner should ever be shown (CONTEXT.md gap A)."""
+    learner_id = clean_learner_id(learner_id)
+    with Session(engine) as s:
+        run = _run_or_404(s, run_id)
+        try:
+            runs.check_owner(run, learner_id)
+        except runs.RunOwnershipError as e:
+            raise HTTPException(403, str(e))
+        scenario = _scenario_or_404(run.template_id, run.locale, run.seed)
+        try:
+            return runs.record_decision(s, run, scenario, decision_id, choice)
+        except runs.RunConflictError as e:
+            raise HTTPException(409, str(e))
+        except (runs.RunIncompleteError, scoring.ScoringError) as e:
+            raise HTTPException(422, str(e))
+
+
+@app.post("/runs/{run_id}/complete")
+def complete_run(run_id: str, learner_id: Optional[str] = Form(None)):
+    """Finish the sitting and hand back the whole story: final score, every
+    decision, and the one that cost the most."""
+    learner_id = clean_learner_id(learner_id)
+    with Session(engine) as s:
+        run = _run_or_404(s, run_id)
+        try:
+            runs.check_owner(run, learner_id)
+        except runs.RunOwnershipError as e:
+            raise HTTPException(403, str(e))
+        scenario = _scenario_or_404(run.template_id, run.locale, run.seed)
+        try:
+            return runs.complete(s, run, scenario)
+        except runs.RunConflictError as e:
+            raise HTTPException(409, str(e))
+        except runs.RunIncompleteError as e:
+            raise HTTPException(422, str(e))
 
 
 @app.get("/learners/{learner_id}/progress/{template_id}")
