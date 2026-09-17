@@ -3,12 +3,12 @@ import os
 from typing import Optional
 
 from pathlib import Path
-from fastapi import FastAPI, Form, HTTPException
+from fastapi import Body, FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, SQLModel, create_engine
 
-from erpsim import generator, locales, memory, scoring, templates
+from erpsim import authoring, generator, locales, memory, scoring, templates
 
 DEFAULT_DATABASE_URL = "sqlite:///erpsim.db"
 LEARNER_ID_MAX = 64
@@ -134,7 +134,9 @@ def progress(learner_id: str, template_id: str, locale: Optional[str] = None):
 
 @app.post("/instructor/templates/validate")
 def validate_template(raw_yaml: str = Form(...)):
-    """Rule 7: authoring validation, fails loud before publish."""
+    """Rule 7: authoring validation, fails loud before publish. Kept for the
+    YAML path (an instructor who already has a file); the builder posts a
+    draft to /instructor/drafts/preview instead."""
     import yaml
     try:
         data = yaml.safe_load(raw_yaml)
@@ -144,6 +146,57 @@ def validate_template(raw_yaml: str = Form(...)):
     except Exception as e:
         raise HTTPException(400, f"not valid YAML: {e}")
     return {"valid": True, "template_id": data.get("id")}
+
+
+# ---------------------------------------------------------------- authoring
+@app.get("/instructor/templates")
+def instructor_templates():
+    """The catalog an instructor manages: what exists, and what it costs to
+    run it everywhere (PRODUCT.md #6 — the N x M number, shown working)."""
+    rows = authoring.listing()
+    locs = locales.available()
+    return {"templates": rows, "locales": locs, "scenarios": len(rows) * len(locs),
+            "scale_options": authoring.SCALES_WITH, "tokens": sorted(authoring.TOKENS)}
+
+
+@app.get("/instructor/drafts/{template_id}")
+def open_draft(template_id: str):
+    """Open a published template back in the builder."""
+    try:
+        return authoring.to_draft(templates.load(template_id))
+    except templates.UnknownTemplateError as e:
+        raise HTTPException(404, str(e))
+
+
+@app.post("/instructor/drafts/preview")
+def preview_draft(draft: dict = Body(...), seed: int = 1):
+    """The instructor's own scenario, rendered in every country before it is
+    published. Invalid drafts come back as one plain sentence, never a
+    stack trace and never YAML."""
+    try:
+        tpl = authoring.from_draft(draft)
+    except authoring.DraftError as e:
+        raise HTTPException(422, str(e))
+    return {"valid": True, "template_id": tpl["id"], "yaml": authoring.to_yaml(tpl),
+            "exists": tpl["id"] in templates.available(),
+            "preview": authoring.preview(tpl, seed)}
+
+
+@app.post("/instructor/drafts/publish")
+def publish_draft(draft: dict = Body(...), overwrite: bool = False):
+    """Publishing writes config/templates/{id}.yaml — adding an industry is
+    still adding a config file (ENGINEERING.md #2), just not by hand."""
+    try:
+        tpl = authoring.from_draft(draft)
+    except authoring.DraftError as e:
+        raise HTTPException(422, str(e))
+    try:
+        return authoring.publish(tpl, overwrite=overwrite)
+    except FileExistsError:
+        raise HTTPException(409, f"A scenario with the short id '{tpl['id']}' already exists. "
+                                 f"Publish again with overwrite to replace it (the old version is archived).")
+    except templates.UnloadableTemplateError as e:  # pragma: no cover - defensive
+        raise HTTPException(500, f"published file did not load back: {e}")
 
 
 @app.get("/health")

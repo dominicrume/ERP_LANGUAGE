@@ -11,7 +11,7 @@ from .locales import LOCALE_RULE_FIELDS
 log = logging.getLogger("erpsim.templates")
 _DIR = Path(__file__).resolve().parents[2] / "config" / "templates"
 REQUIRED_KEYS = {"id", "industry", "title", "narrative", "product_pool", "decisions", "kpi_weights"}
-REASON_FIELDS = set(LOCALE_RULE_FIELDS) | {"locale", "currency", "choice", "points"}
+REASON_FIELDS = set(LOCALE_RULE_FIELDS) | {"locale", "currency", "choice", "points", "delta", "tax_percent"}
 
 
 class UnknownTemplateError(ValueError):

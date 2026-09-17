@@ -30,7 +30,10 @@ def score_decision(scenario: Dict[str, Any], decision_id: str, choice: str) -> D
         points = points * rules[rule["multiply_by"]]
 
     ctx = {**rules, "locale": scenario["locale"], "currency": scenario["currency"],
-           "choice": choice, "points": points}
+           "choice": choice, "points": points,
+           # Pre-formatted fields so authored reasons need no format specs:
+           "delta": f"{points:+.1f}" if isinstance(points, float) else f"{points:+d}",
+           "tax_percent": f"{rules['tax_rate'] * 100:.1f}%"}
     justification = [rule["reason"].format(**ctx)]
     justification.append(
         f"Reminder: {rules['tax_type']} at {rules['tax_rate']*100:.1f}% "
