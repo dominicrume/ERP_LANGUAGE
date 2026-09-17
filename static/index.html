@@ -294,7 +294,7 @@ async function makeDecision(decisionId, choice){
   const learnerId = document.getElementById('learnerId').value.trim() || null;
   try{
     const body = new URLSearchParams({
-      template_id: currentScenario.template_id, locale: currentScenario.locale,
+      template_id: currentScenario.template_id, locale: currentScenario.locale_id,
       seed: currentScenario.seed, decision_id: decisionId, choice,
     });
     if(learnerId) body.set('learner_id', learnerId);
@@ -302,7 +302,7 @@ async function makeDecision(decisionId, choice){
     if(!r.ok){ throw new Error(await r.text()); }
     const result = await r.json();
     revealCard(decisionId, result);
-    await refreshScorebar(learnerId, currentScenario.template_id, document.getElementById('localeSelect').value);
+    await refreshScorebar(learnerId, currentScenario.template_id, currentScenario.locale_id);
   }catch(e){
     alert('Could not score decision: ' + e.message);
   }

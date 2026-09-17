@@ -56,3 +56,21 @@ def test_progress_is_per_locale_at_api(client):
 def test_progress_unknown_locale_is_empty_not_error(client):
     r = client.get("/learners/frank/progress/heatwave_demand", params={"locale": "brazil"})
     assert r.status_code == 200 and r.json()["attempts"] == 0
+
+
+def test_every_generated_scenario_can_be_scored_back_through_the_api(client):
+    """Fix 3b: the scenario must hand the client the locale identifier the
+    API accepts. Before this fix the payload only carried the display code
+    (BR, DE, NG), so scoring any non-UK scenario 404'd on the first card."""
+    catalog = client.get("/catalog").json()
+    for t in catalog["templates"]:
+        for l in catalog["locales"]:
+            s = client.post("/scenarios/generate", data=dict(template_id=t, locale=l, seed=1)).json()
+            assert s["locale_id"] == l
+            d = s["decisions"][0]
+            r = client.post("/decisions/score", data=dict(
+                template_id=s["template_id"], locale=s["locale_id"], seed=s["seed"],
+                decision_id=d["id"], choice=d["options"][0], learner_id="roundtrip"))
+            assert r.status_code == 200, (t, l, r.text)
+    p = client.get("/learners/roundtrip/progress/heatwave_demand").json()
+    assert {r["locale"] for r in p["by_locale"]} == set(catalog["locales"])

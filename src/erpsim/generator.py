@@ -15,7 +15,8 @@ def generate(template_id: str, locale_code: str, seed: int) -> dict:
 
     return {
         "template_id": template_id,
-        "locale": loc["code"],
+        "locale": loc["code"],              # display code (UK, BR, DE, NG)
+        "locale_id": locale_code.lower(),   # the identifier the API accepts
         "seed": seed,
         "title": tpl["title"],
         "narrative": narrative,
