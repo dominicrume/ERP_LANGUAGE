@@ -266,6 +266,14 @@ select{cursor:pointer}
 .sub-card .bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 .sub-card .bar .n{font-size:.86rem;color:var(--muted);font-weight:600}
 .opt-card{border-left:3px solid var(--accent);padding-left:14px;margin:14px 0}
+.impacts{margin:12px 0 0;padding:12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface)}
+.impacts > .lede{font-size:.82rem;font-weight:600;margin-bottom:8px}
+.impact-row{display:grid;grid-template-columns:minmax(0,1.3fr) 92px minmax(0,1.4fr) auto;gap:8px;align-items:center;margin-bottom:8px}
+@media (max-width:640px){.impact-row{grid-template-columns:minmax(0,1fr) 92px;grid-template-areas:"kpi points" "scale scale" "drop drop"}
+  .impact-row .i-kpi{grid-area:kpi}.impact-row .i-points{grid-area:points}.impact-row .i-scale{grid-area:scale}.impact-row .i-drop{grid-area:drop;justify-self:start}}
+.impact-empty{font-size:.82rem;color:var(--warn);background:var(--warn-soft);border-radius:var(--r-sm);padding:8px 10px;margin-bottom:8px}
+.range{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;padding:10px 12px;margin-bottom:14px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface-2);font-size:.84rem;color:var(--muted)}
+.range b{font-family:var(--serif);font-size:1.15rem;font-weight:500;font-variant-numeric:tabular-nums;color:var(--text);margin-right:6px}
 .kpi-row{display:flex;gap:10px;align-items:center;margin-bottom:10px}
 .kpi-row input[type=text]{flex:1}
 .kpi-row input[type=number]{width:90px;flex:none}
@@ -566,7 +574,9 @@ function blankDraft(){
           decisions:[newDecision()], kpis:[{name:'cash position', pct:100}]};
 }
 function newDecision(){ return {label:'', options:[newOption(), newOption()]}; }
-function newOption(){ return {label:'', points:0, multiply_by:'', reason:''}; }
+function newOption(){ return {label:'', reason:'', impacts:[{kpi:'', points:0, scales_with:''}]}; }
+
+function kpiNames(){ return (draft.kpis || []).map(k=>String(k.name||'').trim()).filter(Boolean); }
 
 async function loadInstructor(){
   try{
@@ -625,7 +635,9 @@ async function editTemplate(id){
     draft = {id:d.id, title:d.title, industry:d.industry, narrative:d.narrative,
              product_pool:d.product_pool,
              decisions:d.decisions.map(dec=>({label:dec.label, options:dec.options.map(o=>({
-               label:o.label, points:o.points, multiply_by:o.multiply_by||'', reason:o.reason}))})),
+               label:o.label, reason:o.reason,
+               impacts:(o.impacts||[]).map(i=>({kpi:i.kpi, points:i.points, scales_with:i.scales_with||''}))
+             }))})),
              kpis:Object.entries(d.kpi_weights).map(([name,pct])=>({name:name.replace(/_/g,' '), pct}))};
     editingExisting = d.id;
     openBuilder(`Editing “${d.title}”`);
@@ -661,6 +673,30 @@ function insertProduct(){
   onEdit();
 }
 
+function kpiOptions(sel){
+  const names = kpiNames();
+  const opts = [`<option value=""${sel?'':' selected'}>choose a measure</option>`];
+  for(const n of names) opts.push(`<option value="${esc(n)}"${sel===n?' selected':''}>${esc(n)}</option>`);
+  // Keep a measure that was renamed out from under this option, so nothing is lost silently.
+  if(sel && !names.includes(sel)) opts.push(`<option value="${esc(sel)}" selected>${esc(sel)} (no longer measured)</option>`);
+  return opts.join('');
+}
+
+function setImpact(di, oi, ii, field, value){
+  draft.decisions[di].options[oi].impacts[ii][field] = value;
+  if(field === 'kpi') renderDecisions();
+  onEdit();
+}
+function addImpact(di, oi){
+  draft.decisions[di].options[oi].impacts.push({kpi:'', points:0, scales_with:''});
+  renderDecisions(); onEdit();
+  document.getElementById(`ok-${di}-${oi}-${draft.decisions[di].options[oi].impacts.length-1}`).focus();
+}
+function removeImpact(di, oi, ii){
+  draft.decisions[di].options[oi].impacts.splice(ii,1);
+  renderDecisions(); onEdit();
+}
+
 function scaleOptions(sel){
   const opts = ['<option value="">it costs the same everywhere</option>'];
   for(const [k,label] of Object.entries(META.scale_options||{}))
@@ -691,18 +727,25 @@ function renderDecisions(){
             <input type="text" id="ol-${di}-${oi}" value="${esc(o.label)}" placeholder="Absorb it"
                    oninput="draft.decisions[${di}].options[${oi}].label=this.value; onEdit()">
           </div>
-          <div class="inline spaced">
-            <div class="field points">
-              <label for="op-${di}-${oi}">Points</label>
-              <input type="number" id="op-${di}-${oi}" step="1" value="${esc(o.points)}"
-                     oninput="draft.decisions[${di}].options[${oi}].points=this.value; onEdit()">
-            </div>
-            <div class="field">
-              <label for="os-${di}-${oi}">Does the local market change this?</label>
-              <select id="os-${di}-${oi}" onchange="draft.decisions[${di}].options[${oi}].multiply_by=this.value; onEdit()">
-                ${scaleOptions(o.multiply_by)}
-              </select>
-            </div>
+          <div class="impacts">
+            <div class="lede">What this choice does <span class="help">the weights you set below decide how much each one counts</span></div>
+            ${kpiNames().length ? '' : '<p class="impact-empty">Name what this scenario measures first, under "What it measures".</p>'}
+            ${o.impacts.map((im,ii)=>`
+              <div class="impact-row">
+                <select class="i-kpi" id="ok-${di}-${oi}-${ii}" aria-label="Which measure option ${oi+1} affects"
+                        onchange="setImpact(${di},${oi},${ii},'kpi',this.value)">
+                  ${kpiOptions(im.kpi)}
+                </select>
+                <input class="i-points" type="number" step="1" id="op-${di}-${oi}-${ii}"
+                       aria-label="Points for that measure" value="${esc(im.points)}"
+                       oninput="setImpact(${di},${oi},${ii},'points',this.value)">
+                <select class="i-scale" id="os-${di}-${oi}-${ii}" aria-label="Does the local market change it"
+                        onchange="setImpact(${di},${oi},${ii},'scales_with',this.value)">
+                  ${scaleOptions(im.scales_with)}
+                </select>
+                ${o.impacts.length>1?`<button class="btn-sm danger icon-only i-drop" type="button" aria-label="Remove this measure from option ${oi+1}" onclick="removeImpact(${di},${oi},${ii})"><i class="ph ph-x" aria-hidden="true"></i></button>`:'<span class="i-drop"></span>'}
+              </div>`).join('')}
+            <button class="btn-sm" type="button" onclick="addImpact(${di},${oi})"><i class="ph ph-plus" aria-hidden="true"></i>Add another measure</button>
           </div>
           <div class="field flush">
             <label for="reason-${di}-${oi}">The reason, shown when the card flips <span class="help">click in to add local values</span></label>
@@ -734,8 +777,8 @@ function insertToken(fieldId, token){
 function renderKpis(){
   document.getElementById('kpiList').innerHTML = draft.kpis.map((k,i)=>`
     <div class="kpi-row">
-      <input type="text" value="${esc(k.name)}" placeholder="customer satisfaction" aria-label="KPI ${i+1} name"
-             oninput="draft.kpis[${i}].name=this.value; onEdit()">
+      <input type="text" value="${esc(k.name)}" placeholder="customer satisfaction" aria-label="Measure ${i+1} name"
+             oninput="renameKpi(${i}, this.value)">
       <input type="number" min="0" max="100" value="${esc(k.pct)}" aria-label="KPI ${i+1} weight in percent"
              oninput="draft.kpis[${i}].pct=this.value; updateKpiTotal(); onEdit()">
       <span class="pct" aria-hidden="true">%</span>
@@ -743,8 +786,16 @@ function renderKpis(){
     </div>`).join('');
   updateKpiTotal();
 }
-function addKpi(){ draft.kpis.push({name:'', pct:0}); renderKpis(); onEdit(); document.querySelector('.kpi-row:last-child input[type=text]').focus(); }
-function removeKpi(i){ draft.kpis.splice(i,1); renderKpis(); onEdit(); }
+function renameKpi(i, value){
+  const was = draft.kpis[i].name;
+  draft.kpis[i].name = value;
+  // An option that pointed at the old name follows the rename instead of breaking.
+  for(const d of draft.decisions) for(const o of d.options) for(const im of (o.impacts||[]))
+    if(im.kpi === was) im.kpi = value;
+  onEdit();
+}
+function addKpi(){ draft.kpis.push({name:'', pct:0}); renderKpis(); renderDecisions(); onEdit(); document.querySelector('.kpi-row:last-child input[type=text]').focus(); }
+function removeKpi(i){ draft.kpis.splice(i,1); renderKpis(); renderDecisions(); onEdit(); }
 function updateKpiTotal(){
   const total = draft.kpis.reduce((a,k)=>a+(Number(k.pct)||0),0);
   const el = document.getElementById('kpiTotal');
@@ -763,8 +814,10 @@ function draftPayload(){
     narrative: document.getElementById('fNarrative').value,
     product_pool: draft.product_pool,
     decisions: draft.decisions.map(d=>({label:d.label, options:d.options.map(o=>({
-      label:o.label, points:Number(o.points)||0,
-      multiply_by:o.multiply_by||null, reason:o.reason}))})),
+      label:o.label, reason:o.reason,
+      impacts:(o.impacts||[]).filter(i=>String(i.kpi||'').trim())
+                             .map(i=>({kpi:i.kpi, points:Number(i.points)||0,
+                                       scales_with:i.scales_with||null}))}))})),
     kpi_weights,
   };
 }
@@ -837,6 +890,10 @@ function renderPreview(d){
   const l = locs.find(x=>x.locale_id===previewState.locale);
   const r = l.locale_rules;
   document.getElementById('previewBody').innerHTML = `
+    <div class="range">
+      <span><b class="num">${esc(l.best_run.final_score)}</b>best a learner can finish on</span>
+      <span><b class="num">${esc(l.worst_run.final_score)}</b>worst</span>
+    </div>
     <div class="pv-narrative">${esc(l.narrative)}</div>
     <div class="pv-facts">
       <span><b>${(r.tax_rate*100).toFixed(1)}%</b> ${esc(r.tax_type)}</span>

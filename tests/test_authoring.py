@@ -195,3 +195,114 @@ def test_publishing_requires_no_src_changes(sandbox_templates):
     authoring.publish(authoring.from_draft(draft()))
     for py in (Path(__file__).resolve().parents[1] / "src" / "erpsim").glob("*.py"):
         assert "supplier_price_shock" not in py.read_text()
+
+
+# ---- KPI impacts in the builder (PROMPT-02 item 5) ----
+
+def impact_draft(**over):
+    d = draft()
+    d["decisions"][0]["options"] = [
+        {"label": "Absorb it", "reason": "Absorbing costs margin: [points] pts.",
+         "impacts": [{"kpi": "margin", "points": -20},
+                     {"kpi": "customer satisfaction", "points": 8}]},
+        {"label": "Pass it on", "reason": "Passing it on in [country]: [points] pts.",
+         "impacts": [{"kpi": "customer satisfaction", "points": -12,
+                      "scales_with": "freight_expedite_multiplier"}]},
+    ]
+    d.update(over)
+    return d
+
+
+def test_a_draft_can_author_impacts_per_kpi():
+    tpl = authoring.from_draft(impact_draft())
+    templates.validate(tpl)
+    rule = tpl["decisions"][0]["scoring"]["absorb_it"]
+    assert rule["impact"] == {"margin": {"points": -20}, "customer_satisfaction": {"points": 8}}
+    assert "points" not in rule
+    other = tpl["decisions"][0]["scoring"]["pass_it_on"]["impact"]["customer_satisfaction"]
+    assert other["scales_with"] == "freight_expedite_multiplier"
+
+
+def test_an_impact_on_a_kpi_the_scenario_does_not_measure_is_refused_in_plain_words():
+    d = impact_draft()
+    d["decisions"][0]["options"][0]["impacts"][0]["kpi"] = "reputation"
+    with pytest.raises(authoring.DraftError, match="'reputation' is not one of the KPIs this scenario measures"):
+        authoring.from_draft(d)
+
+
+def test_the_same_kpi_twice_on_one_option_is_refused():
+    d = impact_draft()
+    d["decisions"][0]["options"][0]["impacts"].append({"kpi": "margin", "points": 5})
+    with pytest.raises(authoring.DraftError, match="listed twice"):
+        authoring.from_draft(d)
+
+
+def test_an_option_that_says_nothing_about_any_kpi_is_refused():
+    """A client that drops the scoring must be told, not silently published
+    with every option worth nothing."""
+    d = impact_draft()
+    d["decisions"][0]["options"][0].pop("impacts")
+    with pytest.raises(authoring.DraftError, match="say what this choice does"):
+        authoring.from_draft(d)
+
+
+def test_editing_a_weighted_template_cannot_flatten_it():
+    """The regression this test exists for: a builder that knew only about
+    `points` would reopen a weighted template and republish it scoring 0."""
+    for tid in templates.available():
+        d = authoring.to_draft(templates.load(tid))
+        for dec in d["decisions"]:
+            for opt in dec["options"]:
+                assert opt["impacts"], f"{tid}.{dec['id']}.{opt['id']} lost its impacts"
+                opt.pop("impacts")
+        with pytest.raises(authoring.DraftError):
+            authoring.from_draft(d)
+
+
+def test_a_legacy_template_opens_as_impacts_so_editing_converts_it():
+    legacy = yaml.safe_load((Path(__file__).parent / "fixtures" / "heatwave_v0.2_legacy.yaml").read_text())
+    d = authoring.to_draft(legacy)
+    expedite = [o for o in d["decisions"][1]["options"] if o["id"] == "expedite"][0]
+    assert expedite["legacy_points"] == -20
+    assert expedite["impacts"] == [{"kpi": "cash position", "points": -20,
+                                    "scales_with": "freight_expedite_multiplier"}]
+    converted = authoring.from_draft(d)
+    assert "impact" in converted["decisions"][1]["scoring"]["expedite"]
+
+
+def test_preview_shows_the_best_and_worst_a_learner_could_finish_on():
+    """PRODUCT.md #6 applied to authoring: the instructor sees the real
+    range of their own scenario in each country, not one decision at a time."""
+    p = authoring.preview(authoring.from_draft(impact_draft()))
+    for loc in p["locales"]:
+        best, worst = loc["best_run"], loc["worst_run"]
+        assert 0.0 <= worst["final_score"] <= best["final_score"] <= 100.0
+        assert len(best["choices"]) == len(worst["choices"]) == 1
+        assert best["choices"][0]["score_delta"] >= worst["choices"][0]["score_delta"]
+
+
+def test_the_previewed_range_differs_by_country_when_a_rule_scales():
+    """The range a learner can finish on, not one decision. Two countries may
+    share a best or a worst score, because the best path can be the same
+    option in both; the pair of them is what must differ."""
+    p = authoring.preview(authoring.from_draft(impact_draft()))
+    ranges = {l["locale_id"]: (l["best_run"]["final_score"], l["worst_run"]["final_score"])
+              for l in p["locales"]}
+    assert len(set(ranges.values())) == len(ranges), ranges
+
+
+def test_a_wildly_negative_option_still_reports_a_score_of_zero_not_a_negative():
+    """An instructor can author numbers that would take a learner below
+    zero. The preview must show the floor, not a nonsense negative."""
+    d = impact_draft()
+    d["decisions"][0]["options"][1]["impacts"] = [
+        {"kpi": "margin", "points": -500, "scales_with": "payment_terms_days"}]
+    p = authoring.preview(authoring.from_draft(d))
+    assert all(l["worst_run"]["final_score"] == 0.0 for l in p["locales"])
+
+
+def test_preview_carries_the_kpi_breakdown_for_every_option():
+    p = authoring.preview(authoring.from_draft(impact_draft()))
+    rows = p["locales"][0]["decisions"][0]["options"][0]["kpi_breakdown"]
+    assert {r["kpi"] for r in rows} == {"margin", "customer_satisfaction"}
+    assert all("weighted" in r for r in rows)

@@ -14,11 +14,11 @@ import logging
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List
 
 import yaml
 
-from . import generator, locales, scoring, templates
+from . import generator, locales, runs, scoring, templates
 
 log = logging.getLogger("erpsim.authoring")
 
@@ -159,6 +159,11 @@ def from_draft(draft: dict) -> dict:
             impacts = [i for i in (o.get("impacts") or []) if str(i.get("kpi") or "").strip()]
             if impacts:
                 rule["impact"] = _impact_from_draft(label, olabel, impacts, kpi_keys)
+            elif "points" not in o:
+                # A draft that carries neither is a client that has dropped the
+                # scoring, not a choice that does nothing. Fail loud (Rule 4).
+                raise DraftError(f"Decision '{label}', option '{olabel}': say what this choice "
+                                 f"does to at least one of the KPIs this scenario measures")
             else:
                 # Legacy, unweighted: a single points value on the option.
                 try:
@@ -209,12 +214,20 @@ def to_draft(tpl: dict) -> dict:
         for oid in d["options"]:
             rule = d["scoring"][oid]
             opt = {"id": oid, "label": oid.replace("_", " "),
-                   "reason": reason_to_friendly(rule["reason"]),
-                   "impacts": [], "points": rule.get("points", 0),
-                   "multiply_by": rule.get("multiply_by")}
-            for kpi, effect in (rule.get("impact") or {}).items():
-                opt["impacts"].append({"kpi": kpi.replace("_", " "), "points": effect["points"],
-                                       "scales_with": effect.get("scales_with")})
+                   "reason": reason_to_friendly(rule["reason"]), "impacts": []}
+            if "impact" in rule:
+                for kpi, effect in rule["impact"].items():
+                    opt["impacts"].append({"kpi": kpi.replace("_", " "), "points": effect["points"],
+                                           "scales_with": effect.get("scales_with")})
+            else:
+                # Published before KPI weighting: offer it as one impact on the
+                # first KPI, so editing it converts rather than flattens.
+                first_kpi = next(iter(tpl["kpi_weights"]), None)
+                opt["legacy_points"] = rule.get("points", 0)
+                if first_kpi is not None:
+                    opt["impacts"].append({"kpi": first_kpi.replace("_", " "),
+                                           "points": rule.get("points", 0),
+                                           "scales_with": rule.get("multiply_by")})
             opts.append(opt)
         decisions.append({"id": d["id"], "label": d["label"], "options": opts})
     return {"id": tpl["id"], "title": tpl["title"], "industry": tpl["industry"],
@@ -224,6 +237,18 @@ def to_draft(tpl: dict) -> dict:
 
 
 # ---------------------------------------------------------------- preview / publish
+def _path(kind: str, decisions: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """The best or worst way through a scenario, so an instructor sees the
+    range a learner can actually finish on. Scored here, never in the
+    browser (ENGINEERING.md #6)."""
+    pick = max if kind == "best" else min
+    chosen = [pick(d["options"], key=lambda o: o["score_delta"]) for d in decisions]
+    total = runs.BASE_SCORE + sum(o["score_delta"] for o in chosen)
+    return {"final_score": runs.clamp(total),
+            "choices": [{"decision_id": d["id"], "choice": o["choice"], "score_delta": o["score_delta"]}
+                        for d, o in zip(decisions, chosen)]}
+
+
 def preview(tpl: dict, seed: int = 1) -> dict:
     """Render the instructor's scenario in EVERY country: the story, the
     locale facts, and what each option scores there. This is PRODUCT.md #6
@@ -235,10 +260,12 @@ def preview(tpl: dict, seed: int = 1) -> dict:
         for d in s["decisions"]:
             decisions.append({"id": d["id"], "label": d["label"], "options": [
                 {"choice": oid, **{k: v for k, v in scoring.score_decision(s, d["id"], oid).items()
-                                   if k in ("score_delta", "justification")}}
+                                   if k in ("score_delta", "justification", "kpi_breakdown")}}
                 for oid in d["options"]]})
         out.append({"locale_id": lid, "locale": s["locale"], "currency": s["currency"],
-                    "narrative": s["narrative"], "locale_rules": s["locale_rules"], "decisions": decisions})
+                    "narrative": s["narrative"], "locale_rules": s["locale_rules"],
+                    "decisions": decisions,
+                    "best_run": _path("best", decisions), "worst_run": _path("worst", decisions)})
     return {"template_id": tpl["id"], "title": tpl["title"], "locales": out}
 
 
