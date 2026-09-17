@@ -1,6 +1,7 @@
 """Locale loader — Rule 2: locales are data, never code.
 One broken file must fail loud for that locale only (BREAK.md #4)."""
 import logging
+import re
 from pathlib import Path
 import yaml
 
@@ -52,8 +53,14 @@ def available() -> list[str]:
     return out
 
 
+ID_PATTERN = re.compile(r"^[a-z0-9_]{1,64}$")
+
+
 def load(locale: str) -> dict:
-    p = _DIR / f"{locale.lower()}.yaml"
+    locale = locale.lower()
+    if not ID_PATTERN.match(locale):
+        raise UnknownLocaleError(f"locale id must match {ID_PATTERN.pattern}. Available: {available()}")
+    p = _DIR / f"{locale}.yaml"
     if not p.exists():
         raise UnknownLocaleError(f"no locale file for '{locale}'. Available: {available()}")
     return _load_file(p)

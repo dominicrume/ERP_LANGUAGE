@@ -88,3 +88,31 @@ def test_positive_decision_does_not_write_a_mistake(client):
     _score(client, decision_id="customer_allocation", choice="highest_value_first", learner_id="frank")
     p = client.get("/learners/frank/progress/heatwave_demand", params={"locale": "uk"}).json()
     assert p["attempts"] == 1 and p["last_mistake"] is None
+
+
+# ---- Fix 11: Thief hat residue — ids are names/stems, never paths ----
+
+def test_blank_learner_id_is_rejected(client):
+    assert _score(client, learner_id="   ").status_code == 422
+
+
+def test_overlong_learner_id_is_rejected(client):
+    assert _score(client, learner_id="x" * 65).status_code == 422
+    assert _score(client, learner_id="x" * 64).status_code == 200
+
+
+def test_learner_id_with_slash_is_rejected(client):
+    assert _score(client, learner_id="a/b").status_code == 422
+
+
+def test_learner_id_is_trimmed_so_one_person_is_one_record(client):
+    _score(client, learner_id="  frank ")
+    _score(client, learner_id="frank")
+    assert client.get("/learners/frank/progress/heatwave_demand", params={"locale": "uk"}).json()["attempts"] == 2
+
+
+def test_path_traversal_ids_404_without_touching_the_filesystem(client):
+    for tid in ("../../pyproject", "../locales/uk", "Heatwave_Demand", "a" * 65):
+        assert client.post("/scenarios/generate", data=dict(template_id=tid, locale="uk", seed=1)).status_code == 404, tid
+    for lid in ("../../pyproject", "../templates/heatwave_demand", "u k"):
+        assert client.post("/scenarios/generate", data=dict(template_id="heatwave_demand", locale=lid, seed=1)).status_code == 404, lid

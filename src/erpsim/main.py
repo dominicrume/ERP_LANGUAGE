@@ -11,6 +11,22 @@ from sqlmodel import Session, SQLModel, create_engine
 from erpsim import generator, locales, memory, scoring, templates
 
 DEFAULT_DATABASE_URL = "sqlite:///erpsim.db"
+LEARNER_ID_MAX = 64
+
+
+def clean_learner_id(raw: Optional[str]) -> Optional[str]:
+    """A learner_id is a name, not a path: trimmed, non-empty, no slashes,
+    at most LEARNER_ID_MAX chars. None stays None (anonymous attempt)."""
+    if raw is None:
+        return None
+    lid = raw.strip()
+    if not lid:
+        raise HTTPException(422, "learner_id must not be blank")
+    if len(lid) > LEARNER_ID_MAX:
+        raise HTTPException(422, f"learner_id must be at most {LEARNER_ID_MAX} characters")
+    if "/" in lid or "\\" in lid:
+        raise HTTPException(422, "learner_id must not contain slashes")
+    return lid
 
 
 def database_url() -> str:
@@ -67,6 +83,7 @@ def generate_scenario(template_id: str = Form(...), locale: str = Form(...), see
 def score(template_id: str = Form(...), locale: str = Form(...), seed: int = Form(1),
           decision_id: str = Form(...), choice: str = Form(...),
           learner_id: Optional[str] = Form(None)):
+    learner_id = clean_learner_id(learner_id)
     try:
         scenario = generator.generate(template_id, locale, seed)
     except (templates.UnknownTemplateError, locales.UnknownLocaleError) as e:
@@ -97,6 +114,7 @@ def score(template_id: str = Form(...), locale: str = Form(...), seed: int = For
 def progress(learner_id: str, template_id: str, locale: Optional[str] = None):
     """With ?locale= : that learner's record for one country. Without: the
     same learner's per-locale records plus totals. Never another learner's."""
+    learner_id = clean_learner_id(learner_id)
     with Session(engine) as s:
         if locale:
             p = memory.recall(s, learner_id, template_id, locale)

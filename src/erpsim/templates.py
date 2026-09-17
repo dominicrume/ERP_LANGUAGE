@@ -1,6 +1,7 @@
 """Scenario template loader — Rule 2: templates are data, never code.
 A template carries its own scoring rules; scoring.py only interprets them."""
 import logging
+import re
 from pathlib import Path
 from string import Formatter
 import yaml
@@ -52,7 +53,12 @@ def available() -> list[str]:
     return out
 
 
+ID_PATTERN = re.compile(r"^[a-z0-9_]{1,64}$")
+
+
 def load(template_id: str) -> dict:
+    if not ID_PATTERN.match(template_id):
+        raise UnknownTemplateError(f"template id must match {ID_PATTERN.pattern}. Available: {available()}")
     p = _DIR / f"{template_id}.yaml"
     if not p.exists():
         raise UnknownTemplateError(f"no template '{template_id}'. Available: {available()}")
