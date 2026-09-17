@@ -1,4 +1,5 @@
 """ERP Decision Lab API — generate, decide, recall, author."""
+import os
 from typing import Optional
 
 from pathlib import Path
@@ -9,7 +10,21 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from erpsim import generator, locales, memory, scoring, templates
 
-engine = create_engine("sqlite:///erpsim.db", connect_args={"check_same_thread": False})
+DEFAULT_DATABASE_URL = "sqlite:///erpsim.db"
+
+
+def database_url() -> str:
+    """SCALING.md #1: SQLite for dev -> Postgres for real. DSN swap only,
+    via ERPSIM_DATABASE_URL (ENGINEERING.md #5: nothing inline)."""
+    return os.environ.get("ERPSIM_DATABASE_URL", DEFAULT_DATABASE_URL)
+
+
+def make_engine(url: str):
+    kwargs = {"connect_args": {"check_same_thread": False}} if url.startswith("sqlite") else {}
+    return create_engine(url, **kwargs)
+
+
+engine = make_engine(database_url())
 SQLModel.metadata.create_all(engine)
 
 app = FastAPI(title="ERP Decision Lab", version="0.1.0")

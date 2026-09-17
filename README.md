@@ -15,6 +15,10 @@ passing is the whole pitch.
     uvicorn erpsim.main:app --reload --app-dir src
     # open http://127.0.0.1:8000  <- the frontend, served automatically
 
+Database: SQLite at ./erpsim.db by default. Set ERPSIM_DATABASE_URL to
+any SQLAlchemy DSN (e.g. postgresql+psycopg2://user:pw@host/erpsim) to
+swap it — no code change (SCALING.md #1).
+
 ## The experience (see rules/PRODUCT.md for the full standard)
 A scenario reads like a short story. Each decision is a card — click an
 option and it FLIPS to reveal the score and the plain-language reason,
