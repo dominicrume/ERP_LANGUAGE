@@ -1,0 +1,31 @@
+name: check
+
+# The same gate a developer runs locally: migrations apply cleanly, every
+# test passes, then the ROOTS soil check. Nothing merges that this refuses.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Create the virtualenv the gate expects
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install -e ".[ui]"
+
+      - name: Install Chromium for the browser tests
+        run: .venv/bin/playwright install --with-deps chromium
+
+      - name: make check
+        run: ./scripts/check.sh
