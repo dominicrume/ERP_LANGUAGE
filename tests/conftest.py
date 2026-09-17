@@ -1,5 +1,11 @@
 """Shared fixtures. The API client uses an isolated in-memory DB so tests
 never touch the erpsim.db of whoever is running them."""
+import os
+
+# Importing the app builds its engine. Point it at memory BEFORE the import
+# so a test run never creates or touches ./erpsim.db in the working dir.
+os.environ.setdefault("ERPSIM_DATABASE_URL", "sqlite://")
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, create_engine

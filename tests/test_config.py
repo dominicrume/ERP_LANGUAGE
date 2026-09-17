@@ -7,6 +7,12 @@ def test_default_dsn_is_sqlite_dev(monkeypatch):
     assert main.database_url() == "sqlite:///erpsim.db"
 
 
+def test_import_never_creates_a_db_file_in_cwd():
+    """conftest points ERPSIM_DATABASE_URL at memory before import; the
+    engine the app built must not be a file in the working directory."""
+    assert str(main.engine.url) == "sqlite://"
+
+
 def test_dsn_comes_from_environment(monkeypatch, tmp_path):
     url = f"sqlite:///{tmp_path}/other.db"
     monkeypatch.setenv("ERPSIM_DATABASE_URL", url)
