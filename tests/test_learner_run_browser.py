@@ -62,7 +62,7 @@ def _page(browser, url, **ctx):
     return context, page
 
 
-def _begin(page, learner="amina", template="heatwave_demand", locale="nigeria"):
+def _begin(page, learner="amina", template="heatwave_demand", locale="brazil"):
     page.fill("#learnerId", learner)
     page.select_option("#templateSelect", template)
     page.select_option("#localeSelect", locale)
@@ -142,7 +142,7 @@ def test_the_record_counts_finished_sittings_and_shows_a_streak(browser_and_url)
     page.reload(wait_until="networkidle")
     # The page comes back to the same name, scenario and country.
     assert page.locator("#learnerId").input_value() == "cleo"
-    assert page.locator("#localeSelect").input_value() == "nigeria"
+    assert page.locator("#localeSelect").input_value() == "brazil"
     page.wait_for_selector("#memoryStrip.show", timeout=6000)
     strip = page.locator("#memoryText").inner_text()
     assert "finished this scenario" in strip and "out of 100" in strip

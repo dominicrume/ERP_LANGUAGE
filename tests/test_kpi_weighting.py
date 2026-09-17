@@ -54,12 +54,12 @@ def test_a_scenario_that_cares_about_service_scores_expedite_differently(sandbox
 
 def test_every_weighted_score_shows_its_own_arithmetic():
     """Rule 8: a score must carry its provenance, now per KPI."""
-    s = generator.generate("heatwave_demand", "nigeria", seed=1)
+    s = generator.generate("heatwave_demand", "brazil", seed=1)
     r = scoring.score_decision(s, "freight_choice", "expedite")
     rows = {row["kpi"]: row for row in r["kpi_breakdown"]}
-    assert rows["overhead_cost"]["points"] == -84.0          # -40 x Nigeria's 2.1 multiplier
+    assert rows["overhead_cost"]["points"] == -76.0          # -40 x Brazil's 1.9 multiplier
     assert rows["overhead_cost"]["weight"] == 0.25
-    assert rows["overhead_cost"]["weighted"] == -21.0
+    assert rows["overhead_cost"]["weighted"] == -19.0
     assert rows["customer_satisfaction"]["weighted"] == pytest.approx(4.2)
     assert round(sum(row["weighted"] for row in r["kpi_breakdown"]), 1) == r["score_delta"]
 
@@ -125,9 +125,9 @@ def test_both_shipped_templates_are_weighted_not_legacy():
 def test_locale_and_kpi_weighting_compose(sandbox_templates):
     """Both dimensions at once: country multiplier inside a weighted KPI."""
     deltas = {l: _delta("heatwave_demand", l, "freight_choice", "expedite") for l in locales.available()}
-    assert len(set(deltas.values())) == 4
+    assert len(set(deltas.values())) == len(locales.available())
     _reweight(sandbox_templates, "heatwave_demand",
               {"cash_position": 0.34, "customer_satisfaction": 0.33, "overhead_cost": 0.33})
     after = {l: _delta("heatwave_demand", l, "freight_choice", "expedite") for l in locales.available()}
-    assert len(set(after.values())) == 4
+    assert len(set(after.values())) == len(locales.available())
     assert all(after[l] != deltas[l] for l in deltas)

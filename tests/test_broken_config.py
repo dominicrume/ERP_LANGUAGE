@@ -37,7 +37,7 @@ def test_broken_locale_is_excluded_from_available(broken_locale_dir, caplog):
     with caplog.at_level(logging.WARNING, logger="erpsim.locales"):
         avail = locales.available()
     assert "zz_typo" not in avail and "zz_thin" not in avail
-    assert "uk" in avail and len(avail) == 4
+    assert "uk" in avail and len(avail) == 2
     assert "zz_typo.yaml" in caplog.text and "zz_thin.yaml" in caplog.text
 
 
@@ -65,14 +65,14 @@ def test_broken_template_load_fails_loud_and_structured(broken_template_dir):
 
 def test_api_isolates_a_broken_locale(client, broken_locale_dir):
     cat = client.get("/catalog").json()
-    assert "zz_typo" not in cat["locales"] and cat["possible_scenarios"] == 8
+    assert "zz_typo" not in cat["locales"] and cat["possible_scenarios"] == 4
     r = client.post("/scenarios/generate", data=dict(template_id="heatwave_demand", locale="zz_typo", seed=1))
     assert r.status_code == 404 and "not valid YAML" in r.json()["detail"]
     r = client.post("/decisions/score", data=dict(template_id="heatwave_demand", locale="zz_typo", seed=1,
                                                    decision_id="freight_choice", choice="standard"))
     assert r.status_code == 404
     assert client.post("/scenarios/generate", data=dict(template_id="heatwave_demand", locale="uk", seed=1)).status_code == 200
-    assert client.get("/health").json()["locales"] == 4
+    assert client.get("/health").json()["locales"] == 2
 
 
 def test_api_isolates_a_broken_template(client, broken_template_dir):

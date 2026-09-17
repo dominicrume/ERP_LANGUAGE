@@ -72,6 +72,8 @@ def test_an_older_build_refuses_a_newer_database(tmp_path):
 def test_a_v04_database_upgrades_and_keeps_the_learner_data(tmp_path):
     engine = _v04_database(tmp_path, rows=[
         ("frank", "heatwave_demand", "uk", 3, 88.0, "Expedite cost you.", "2026-09-16 10:00:00"),
+        # A row for a country this release no longer ships. Parking a locale
+        # must never touch the records learners already earned in it.
         ("frank", "heatwave_demand", "nigeria", 1, 58.0, None, "2026-09-16 11:00:00"),
         ("priya", "made_to_order", "uk", 7, 95.0, None, "2026-09-16 12:00:00"),
     ])

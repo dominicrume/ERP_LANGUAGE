@@ -112,15 +112,15 @@ def test_an_instructor_can_author_and_publish_without_touching_yaml(instructor_p
 def test_preview_proves_localization_to_the_instructor(instructor_page):
     """The thesis, shown to the author about their OWN scenario."""
     page, _ = instructor_page
-    assert page.locator(".loc-tab").count() == 4
+    assert page.locator(".loc-tab").count() == 2
     assert page.locator(".range").count() == 1        # the range a learner can finish on
     assert "Genuinely localized" in page.locator(".thesis").inner_text()
     deltas = []
-    for i in range(4):
+    for i in range(2):
         page.locator(".loc-tab").nth(i).click()
         page.wait_for_timeout(300)
         deltas.append(page.locator(".pv-opt .d").first.inner_text())
-    assert len(set(deltas)) == 4, deltas
+    assert len(set(deltas)) == 2, deltas
 
 
 def test_an_open_draft_survives_a_trip_to_the_learner_view(instructor_page):

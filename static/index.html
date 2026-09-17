@@ -562,6 +562,7 @@ let currentRun = null;           // the sitting in progress, owned by the server
 let decisionIndex = new Map();   // decision id -> card index (ids never go into element ids)
 const RUN_KEY = 'erpsim.run';    // so a reload resumes the sitting instead of losing it
 const PICK_KEY = 'erpsim.pick';  // and comes back to the same name, scenario and country
+const HOME_LOCALE = 'brazil';    // the country this release is built around
 
 /* ---------------- shared helpers ---------------- */
 function esc(t){ return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -1029,7 +1030,9 @@ async function populateSelectors(){
     tSel.innerHTML = d.templates.map(t=>`<option value="${esc(t)}">${esc(readableName(t))}</option>`).join('');
     lSel.innerHTML = d.locales.map(l=>`<option value="${esc(l)}">${esc(countryName(l))}</option>`).join('');
     if(d.templates.includes(prevT)) tSel.value = prevT;
+    // Fall back to the release's home country rather than whatever sorts first.
     if(d.locales.includes(prevL)) lSel.value = prevL;
+    else if(d.locales.includes(HOME_LOCALE)) lSel.value = HOME_LOCALE;
   }catch(e){
     document.getElementById('greeting').textContent = 'Could not reach the API. Is the backend running?';
   }

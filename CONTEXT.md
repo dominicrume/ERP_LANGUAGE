@@ -37,7 +37,7 @@ behave differently in four countries on demand.
 
 | Audience | What they need to believe | Status |
 |---|---|---|
-| Learner | "This taught me something about operating in Nigeria." | True: a sitting starts, accumulates and ends with a score and a reason for each decision |
+| Learner | "This taught me something about operating in Brazil." | True: a sitting starts, accumulates and ends with a score and a reason for each decision |
 | Instructor | "I can write my own scenario without an engineer." | True as of v0.4.0, browser-proven; authors KPI impacts as of v1.0.0 |
 | Buyer / funder | "Localization is real business logic, not a UI skin." | True and demonstrable in one command |
 
@@ -58,8 +58,11 @@ behave differently in four countries on demand.
 | Database | SQLite via `ERPSIM_DATABASE_URL` | Versioned, unique per learner × template × locale |
 | Gate | `scripts/check.sh` / `make check` | migrations + pytest + ROOTS, also on every push (GitHub Actions) |
 
-Content that grows without code: `config/locales/*.yaml` (4 countries),
-`config/templates/*.yaml` (2 industries). 2 × 4 = 8 playable combinations.
+Content that grows without code: `config/locales/*.yaml` and
+`config/templates/*.yaml`. This release ships Brazil and the UK against 2
+industries, so 2 × 2 = 4 playable combinations. Germany and Nigeria are
+written and parked in `config/locales/_parked`; restoring one is a file move
+(`tests/test_locales.py` proves it).
 
 ---
 
@@ -86,7 +89,7 @@ Content that grows without code: `config/locales/*.yaml` (4 countries),
 | 17 | A seeded v0.4 database upgrades with the learner's data intact | `pytest tests/test_migrations.py` |
 | 18 | Nobody plays in another learner's sitting, answers twice, or finishes early | `pytest tests/test_runs.py -k "cannot or another"` |
 
-203 tests. `make check` is green locally and on GitHub Actions.
+202 tests. `make check` is green locally and on GitHub Actions.
 
 ---
 
@@ -137,7 +140,7 @@ and summarised next, plus these honest limits:
 
     python3 -m venv .venv && source .venv/bin/activate
     pip install -e ".[ui]" && playwright install chromium
-    make check                                  # migrations + 203 tests + ROOTS gate
+    make check                                  # migrations + 202 tests + ROOTS gate
     uvicorn erpsim.main:app --reload --app-dir src
     # http://127.0.0.1:8000
 

@@ -93,3 +93,16 @@
   score, every decision with its reason, what cost the most, and the streak.
   (7) GitHub Actions runs the same gate on every push and pull request.
   Tests 123 -> 203.
+- 2026-09-18 v1.1.0 — Narrowed to one market. This release ships Brazil, the
+  home country and the default, plus the UK. Germany and Nigeria are not
+  deleted: they move to config/locales/_parked with a README that says why
+  each is kept and how to bring it back, which is a file move and a line in
+  the locale test table. A test proves that path works and that nothing in
+  src/ names a country. Catalogue is now 2 industries x 2 countries = 4
+  combinations; every count in the tests, the API and the docs follows the
+  files rather than a number typed in prose. Both scoring goldens were
+  regenerated for the shipped pair, with the legacy numbers untouched for
+  the rows that remain. Learner records earned in a parked country are left
+  alone in the database, and the migration test keeps a Nigerian row to
+  prove it. Tests 203 -> 202, because the per-country parametrised cases
+  follow the catalogue.

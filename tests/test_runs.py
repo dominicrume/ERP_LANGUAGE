@@ -109,11 +109,11 @@ def test_a_score_is_always_out_of_a_hundred(raw, shown):
 
 
 def test_a_completed_run_reports_a_score_inside_that_range(client):
-    run = _start(client, locale="nigeria")["run"]
+    run = _start(client, locale="brazil")["run"]
     _play_all(client, run["run_id"], {"customer_allocation": "first_come_first_served",
                                       "freight_choice": "expedite"})
     body = client.post(f"/runs/{run['run_id']}/complete").json()
-    assert body["raw_score_so_far"] == 83.9
+    assert body["raw_score_so_far"] == 85.9
     assert 0.0 <= body["final_score"] <= 100.0
 
 
@@ -252,9 +252,8 @@ def test_the_scenario_a_run_replays_is_always_the_one_that_was_played(client):
     assert first == again
 
 
-@pytest.mark.parametrize("locale,expected", [("uk", 88.9), ("germany", 89.9),
-                                             ("nigeria", 83.9), ("brazil", 85.9)])
-def test_the_same_run_in_four_countries_ends_on_four_different_scores(client, locale, expected):
+@pytest.mark.parametrize("locale,expected", [("uk", 88.9), ("brazil", 85.9)])
+def test_the_same_run_in_each_country_ends_on_a_different_score(client, locale, expected):
     """The localization thesis, now measured on a whole sitting."""
     run = _start(client, locale=locale)["run"]
     _play_all(client, run["run_id"], {"customer_allocation": "first_come_first_served",
@@ -297,7 +296,7 @@ def test_an_unfinished_run_never_reaches_the_record(client):
 
 
 def test_progress_totals_runs_and_streaks_across_countries(client):
-    for locale in ("uk", "nigeria"):
+    for locale in ("uk", "brazil"):
         run = _start(client, locale=locale, learner_id="amina")["run"]
         _play_all(client, run["run_id"], {"customer_allocation": "highest_value_first",
                                           "freight_choice": "standard"}, learner_id="amina")
@@ -305,4 +304,4 @@ def test_progress_totals_runs_and_streaks_across_countries(client):
     all_of_it = client.get("/learners/amina/progress/heatwave_demand").json()
     assert all_of_it["runs_completed"] == 2
     assert all_of_it["current_streak"] == 1
-    assert {r["locale"] for r in all_of_it["by_locale"]} == {"uk", "nigeria"}
+    assert {r["locale"] for r in all_of_it["by_locale"]} == {"uk", "brazil"}

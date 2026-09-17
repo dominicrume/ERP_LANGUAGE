@@ -48,9 +48,9 @@ def test_every_option_of_every_template_scores_with_a_reason():
 
 def test_made_to_order_subcontract_is_locale_aware():
     uk = generator.generate("made_to_order", "uk", seed=1)
-    ng = generator.generate("made_to_order", "nigeria", seed=1)
+    br = generator.generate("made_to_order", "brazil", seed=1)
     assert scoring.score_decision(uk, "subcontract", "yes")["score_delta"] != \
-           scoring.score_decision(ng, "subcontract", "yes")["score_delta"]
+           scoring.score_decision(br, "subcontract", "yes")["score_delta"]
 
 
 def test_unknown_decision_fails_loud():

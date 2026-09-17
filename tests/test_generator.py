@@ -31,7 +31,8 @@ def test_localization_is_not_just_translation():
     """The same template through two locales must carry DIFFERENT numeric
     rules — proving this is localization, not a language swap."""
     uk = generator.generate("heatwave_demand", "uk", seed=1)
-    ng = generator.generate("heatwave_demand", "nigeria", seed=1)
-    assert uk["locale_rules"]["tax_rate"] != ng["locale_rules"]["tax_rate"]
-    assert uk["currency"] != ng["currency"]
-    assert uk["locale_rules"]["freight_expedite_multiplier"] != ng["locale_rules"]["freight_expedite_multiplier"]
+    br = generator.generate("heatwave_demand", "brazil", seed=1)
+    assert uk["locale_rules"]["tax_rate"] != br["locale_rules"]["tax_rate"]
+    assert uk["locale_rules"]["tax_type"] != br["locale_rules"]["tax_type"]   # VAT vs ICMS/ISS
+    assert uk["currency"] != br["currency"]
+    assert uk["locale_rules"]["freight_expedite_multiplier"] != br["locale_rules"]["freight_expedite_multiplier"]

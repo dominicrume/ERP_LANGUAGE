@@ -73,7 +73,7 @@ def server():
 def _play_first_card(page):
     page.goto(f"http://127.0.0.1:{PORT}/", wait_until="networkidle")
     page.select_option("#templateSelect", "heatwave_demand")
-    page.select_option("#localeSelect", "nigeria")
+    page.select_option("#localeSelect", "brazil")
     page.click("#beginBtn")
     page.wait_for_selector(".scenario.show .opt")
     page.locator(".opt").first.click()

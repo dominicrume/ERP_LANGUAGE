@@ -3,7 +3,7 @@
 | Component              | Running now                          | Graduates to (funding/scale) |
 |-------------------------|---------------------------------------|-------------------------------|
 | Scenario templates      | YAML files, 2 industries              | Instructor UI authoring templates live |
-| Locales                 | YAML files, 4 countries               | Community-contributed locale packs |
+| Locales                 | Brazil and the UK ship; Germany and Nigeria parked | Community-contributed locale packs |
 | Learner memory           | SQLite, per learner x template        | Postgres, multi-tenant per university |
 | Scoring engine           | Deterministic rules, per-decision     | Same rules + optional AI coaching commentary |
 | AI tutor "conversation"  | Not built (Frank's gap, correctly)    | Chat layer ON TOP of this scoring engine — grounded, not freeform |

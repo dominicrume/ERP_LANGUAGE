@@ -48,7 +48,7 @@ def test_preview_returns_every_locale_and_never_publishes(client, sandbox_templa
     body = r.json()
     assert body["valid"] and body["template_id"] == "port_strike_delay"
     assert body["exists"] is False
-    assert len(body["preview"]["locales"]) == 4
+    assert len(body["preview"]["locales"]) == 2
     assert sorted(p.name for p in sandbox_templates.glob("*.yaml")) == before
 
 

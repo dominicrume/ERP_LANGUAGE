@@ -10,7 +10,7 @@
 | 7 | Sandboxing [HV] | SEEDLING | | Rume 2026-09-18: single-process v1.0; per-tenant isolation at 2nd paying institution (SCALING.md #4) |
 | 8 | Trajectory [HV] | ROOTED | a run records every decision with its reason, completes with a final score, and feeds runs_completed, best_run_score and a streak (tests/test_runs.py, tests/test_learner_run_browser.py) | |
 | 9 | Guardrails | ROOTED | choice/decision/id validation 422/404; broken config file isolated (tests/test_broken_config.py); template scoring validated at authoring time | |
-| 10 | Verification | ROOTED | tests/ 203 tests: two scoring goldens (legacy + weighted), zero-code growth, migration upgrade of a seeded v0.4 database, 18 real-browser tests across learner sittings, authoring, stored-XSS and UI quality in light and dark; scripts/check.sh gate proves migrations too | |
+| 10 | Verification | ROOTED | tests/ 202 tests: two scoring goldens (legacy + weighted), zero-code growth, migration upgrade of a seeded v0.4 database, 18 real-browser tests across learner sittings, authoring, stored-XSS and UI quality in light and dark; scripts/check.sh gate proves migrations too | |
 | 11 | Grounding [HV] | ROOTED | every score carries its reason and now its per-KPI arithmetic, whose rows add up to the delta (tests/test_kpi_weighting.py); shown verbatim in the card and the completion summary | |
-| 12 | CI/CD [HV] | ROOTED | .github/workflows/check.yml runs scripts/check.sh (migrations, 203 tests incl. Chromium, ROOTS) on every push and pull request to github.com/dominicrume/ERP_LANGUAGE | |
+| 12 | CI/CD [HV] | ROOTED | .github/workflows/check.yml runs scripts/check.sh (migrations, 202 tests incl. Chromium, ROOTS) on every push and pull request to github.com/dominicrume/ERP_LANGUAGE | |
 | 13 | Feedback [HV] | ROOTED | finished sittings, best run, streak and last mistake per learner x template x locale -> completion card at the end and welcome strip on return | |

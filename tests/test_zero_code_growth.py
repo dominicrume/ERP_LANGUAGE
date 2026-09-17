@@ -1,4 +1,4 @@
-"""Exit criterion (PROMPT-01 §5, ENGINEERING.md Rule 2): a fifth country and a
+"""Exit criterion (PROMPT-01 §5, ENGINEERING.md Rule 2): a new country and a
 third industry are two new YAML files. They generate and score through the
 API with zero edits to src/. The files live in tmp_path; src/ is grepped
 to prove it knows nothing about them."""
@@ -65,7 +65,7 @@ def test_src_knows_nothing_about_the_new_files():
 def test_fifth_locale_and_third_template_grow_the_catalog_with_zero_src_changes(client, grown_config):
     cat = client.get("/catalog").json()
     assert "kenya" in cat["locales"] and "cold_snap" in cat["templates"]
-    assert cat["possible_scenarios"] == 15  # 3 x 5
+    assert cat["possible_scenarios"] == 9   # 3 templates x 3 locales
 
     # New template x new locale, generated and scored through the API.
     s = client.post("/scenarios/generate", data=dict(template_id="cold_snap", locale="kenya", seed=7)).json()

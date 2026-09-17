@@ -1,8 +1,13 @@
 # ERP Decision Lab — Localized Operational Decision-Support Training
 
 The gap between high-level strategy simulations and daily ERP transaction
-decisions — with real localization (tax, currency, freight, payment terms
-per country), not just translated UI text.
+decisions, with real localization (tax, currency, freight, payment terms per
+country) rather than translated UI text.
+
+**This release ships Brazil and the UK.** Brazil is the home country and the
+default. Germany and Nigeria are written, tested and parked in
+`config/locales/_parked`; each comes back with a file move and no code
+change, which is the whole expansion story.
 
 ## What a learner does
 Pick a scenario and a country, read a short story, and turn over one card
@@ -22,7 +27,7 @@ generate and score through the API with src/ untouched.
 ## Run it
     python3 -m venv .venv && source .venv/bin/activate
     pip install -e ".[dev]" httpx
-    make check                                # migrations, 203 tests, then the ROOTS gate
+    make check                                # migrations, 202 tests, then the ROOTS gate
     uvicorn erpsim.main:app --reload --app-dir src
     # open http://127.0.0.1:8000  <- the frontend, served automatically
 
@@ -66,18 +71,18 @@ Prove it without reading the code:
     pytest tests/test_learner_run_browser.py -v
 
 Chromium tests author a scenario through the UI alone, publish it, play it
-as a learner in Brazil, reopen it for editing, and separately play a whole
+as a learner, reopen it for editing, and separately play a whole
 sitting to its final score and reload halfway through to prove it resumes.
 They skip loudly if Playwright is missing: a skip means unverified, not
 passed.
 
 ## Try it
     curl http://127.0.0.1:8000/catalog
-    # -> 2 templates x 4 locales = 8 scenarios, zero extra code
+    # -> 2 templates x 2 countries = 4 scenarios, zero extra code
 
     # Start a sitting. The reply carries the run id and the scenario.
     RUN=$(curl -s -X POST http://127.0.0.1:8000/runs \
-      -F template_id=heatwave_demand -F locale=nigeria -F seed=1 -F learner_id=frank \
+      -F template_id=heatwave_demand -F locale=brazil -F seed=1 -F learner_id=frank \
       | python3 -c 'import sys,json; print(json.load(sys.stdin)["run"]["run_id"])')
 
     curl -X POST http://127.0.0.1:8000/runs/$RUN/decisions \
@@ -86,12 +91,12 @@ passed.
 
     curl -X POST http://127.0.0.1:8000/runs/$RUN/decisions \
       -F decision_id=freight_choice -F choice=expedite -F learner_id=frank
-    # -> -16.8 pts in Nigeria (UK: -11.8), score_so_far 87.4: the sum, not the last card
+    # -> -14.8 pts in Brazil (UK: -11.8), score_so_far 89.4: the sum, not the last card
 
     curl -X POST http://127.0.0.1:8000/runs/$RUN/complete -F learner_id=frank
     # -> final_score, every decision with its reason, biggest_mistake, and the record
 
-    curl "http://127.0.0.1:8000/learners/frank/progress/heatwave_demand?locale=nigeria"
+    curl "http://127.0.0.1:8000/learners/frank/progress/heatwave_demand?locale=brazil"
     # -> runs_completed, best_run_score, current_streak, last_mistake
 
     curl -X POST http://127.0.0.1:8000/runs/$RUN/decisions \
@@ -104,7 +109,14 @@ passed.
 
 ## Adding a country or an industry
 Add one YAML file. config/locales/ for a country, config/templates/ for an
-industry. Zero code changes — see BLUEPRINT-MAP.md and rules/ENGINEERING.md Rule 2.
+industry. Zero code changes, see BLUEPRINT-MAP.md and rules/ENGINEERING.md
+Rule 2. Restoring a parked country is the same move:
+
+    git mv config/locales/_parked/germany.yaml config/locales/
+    make check
+
+`tests/test_locales.py` proves that path works and that nothing in `src/`
+mentions the country by name.
 
 You can also write the file by hand. Every option declares what it does to
 the KPIs the template measures, and the weights decide how much each one
