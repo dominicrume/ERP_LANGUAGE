@@ -1,11 +1,13 @@
 """Scenario template loader — Rule 2: templates are data, never code.
 A template carries its own scoring rules; scoring.py only interprets them."""
+import logging
 from pathlib import Path
 from string import Formatter
 import yaml
 
 from .locales import LOCALE_RULE_FIELDS
 
+log = logging.getLogger("erpsim.templates")
 _DIR = Path(__file__).resolve().parents[2] / "config" / "templates"
 REQUIRED_KEYS = {"id", "industry", "title", "narrative", "product_pool", "decisions", "kpi_weights"}
 REASON_FIELDS = set(LOCALE_RULE_FIELDS) | {"locale", "currency", "choice", "points"}
@@ -19,17 +21,42 @@ class InvalidTemplateError(ValueError):
     pass
 
 
+class UnloadableTemplateError(UnknownTemplateError):
+    """The file exists but is not valid YAML or fails validation. Subclass of
+    UnknownTemplateError so the API treats it as 'not available' (404) for
+    that template only — the rest of the catalog keeps working."""
+
+
+def _load_file(p: Path) -> dict:
+    try:
+        data = yaml.safe_load(p.read_text())
+    except yaml.YAMLError as e:
+        raise UnloadableTemplateError(f"template file {p.name} is not valid YAML: {e}") from None
+    try:
+        validate(data)
+    except InvalidTemplateError as e:
+        raise UnloadableTemplateError(f"template file {p.name} is invalid: {e}") from None
+    return data
+
+
 def available() -> list[str]:
-    return sorted(p.stem for p in _DIR.glob("*.yaml"))
+    """Templates that actually load. A broken file is logged and skipped."""
+    out = []
+    for p in sorted(_DIR.glob("*.yaml")):
+        try:
+            _load_file(p)
+        except UnloadableTemplateError as e:
+            log.warning("skipping template %s: %s", p.name, e)
+            continue
+        out.append(p.stem)
+    return out
 
 
 def load(template_id: str) -> dict:
     p = _DIR / f"{template_id}.yaml"
     if not p.exists():
         raise UnknownTemplateError(f"no template '{template_id}'. Available: {available()}")
-    data = yaml.safe_load(p.read_text())
-    validate(data)
-    return data
+    return _load_file(p)
 
 
 def _validate_decision(d: dict) -> None:
