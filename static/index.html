@@ -45,6 +45,13 @@ h1,h2,h3,.serif{font-family:'Newsreader',serif}
 /* ---------- CONTROLS ---------- */
 .controls{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0 8px}
 .identity-note{font-size:.78rem;color:var(--muted);line-height:1.5;max-width:640px;margin:0 0 6px}
+.api-status{display:none;align-items:center;gap:10px;margin:14px 0 0;padding:12px 16px;border-radius:10px;font-size:.86rem;line-height:1.45}
+.api-status.show{display:flex}
+.api-status.wait{background:#FFF4E5;color:#7A4A12}
+.api-status.fail{background:#FBEAE3;color:#A44A1E}
+.api-status .spin{width:10px;height:10px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;animation:spin .8s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.api-status button{margin-left:auto;font:inherit;font-weight:600;background:none;border:1px solid currentColor;border-radius:6px;padding:5px 10px;cursor:pointer;color:inherit}
 select,input[type=text]{
   font-family:'Instrument Sans',sans-serif;font-size:.9rem;font-weight:500;
   padding:11px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);
@@ -141,6 +148,7 @@ footer{padding:60px 0 40px;color:var(--muted);font-size:.82rem;text-align:center
     <select id="localeSelect"></select>
     <button class="btn btn-primary" onclick="loadScenario()">Begin scenario</button>
   </div>
+  <div class="api-status" id="apiStatus" role="status" aria-live="polite"><span class="spin" id="apiSpin"></span><span id="apiStatusText"></span></div>
   <p class="identity-note" id="identityNote">Your progress is saved under the exact name you type, on this lab's server, and is used only to help you pick up where you left off — never for anything else, never shown to another learner. Same name, same record: use one you'll remember.</p>
 
   <div class="scenario" id="scenarioBlock">
@@ -193,6 +201,36 @@ kpi_weights: { cash_position: 1.0 }"></textarea>
 const API = window.location.origin;
 let currentScenario = null;
 let flipped = {};
+
+/* ---- API transport: honest "reconnecting" state, one retry, never lose the scenario (BREAK.md #4) ---- */
+const statusEl = () => document.getElementById('apiStatus');
+function showStatus(kind, text, retryFn){
+  const el = statusEl();
+  el.className = 'api-status show ' + kind;
+  document.getElementById('apiSpin').style.display = kind === 'wait' ? 'inline-block' : 'none';
+  document.getElementById('apiStatusText').textContent = text;
+  const old = el.querySelector('button'); if(old) old.remove();
+  if(retryFn){ const b = document.createElement('button'); b.textContent = 'Try again'; b.onclick = () => { hideStatus(); retryFn(); }; el.appendChild(b); }
+}
+function hideStatus(){ statusEl().className = 'api-status'; }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// Resolves to the Response. Retries ONCE on network failure or 5xx.
+// 4xx is the API telling us something specific: returned, never retried.
+async function apiFetch(path, opts, retryFn){
+  const url = `${API}${path}`;
+  for(let attempt = 0; attempt < 2; attempt++){
+    try{
+      const r = await fetch(url, opts);
+      if(r.status < 500){ hideStatus(); return r; }
+      throw new Error(`API returned ${r.status}`);
+    }catch(e){
+      if(attempt === 0){ showStatus('wait', 'Could not reach the API, retrying…'); await sleep(900); continue; }
+      showStatus('fail', "Still can't reach the API. Your scenario is still here — nothing was lost.", retryFn);
+      throw e;
+    }
+  }
+}
 
 function setMode(mode){
   document.getElementById('learnerView').style.display = mode==='learner' ? 'block' : 'none';
@@ -252,15 +290,14 @@ async function loadScenario(){
   const seed = Math.floor(Math.random()*1000);
   try{
     const body = new URLSearchParams({template_id: templateId, locale, seed});
-    const r = await fetch(`${API}/scenarios/generate`, {method:'POST', body});
-    if(!r.ok){ throw new Error(await r.text()); }
+    const r = await apiFetch('/scenarios/generate', {method:'POST', body}, loadScenario);
+    if(!r.ok){ showStatus('fail', 'Could not generate scenario: ' + ((await r.json()).detail || r.status)); return; }
     const s = await r.json();
     currentScenario = s;
     renderScenario(s);
+    document.getElementById('statRunning').textContent = '100.0';
     await checkMemory();
-  }catch(e){
-    alert('Could not generate scenario: ' + e.message);
-  }
+  }catch(e){ /* status strip already shows the honest state */ }
 }
 
 function renderScenario(s){
@@ -301,14 +338,15 @@ async function makeDecision(decisionId, choice){
       seed: currentScenario.seed, decision_id: decisionId, choice,
     });
     if(learnerId) body.set('learner_id', learnerId);
-    const r = await fetch(`${API}/decisions/score`, {method:'POST', body});
-    if(!r.ok){ throw new Error(await r.text()); }
+    const r = await apiFetch('/decisions/score', {method:'POST', body}, () => makeDecision(decisionId, choice));
+    if(!r.ok){ showStatus('fail', 'Could not score that decision: ' + ((await r.json()).detail || r.status)); return; }
     const result = await r.json();
     revealCard(decisionId, result);
+    // Score comes from the API, never computed here (ENGINEERING.md #6).
+    document.getElementById('statRunning').textContent = result.running_score.toFixed(1);
+    document.getElementById('scorebar').classList.add('show');
     await refreshScorebar(learnerId, currentScenario.template_id, currentScenario.locale_id);
-  }catch(e){
-    alert('Could not score decision: ' + e.message);
-  }
+  }catch(e){ /* status strip already shows the honest state */ }
 }
 
 function revealCard(decisionId, result){
@@ -339,7 +377,7 @@ async function validateTemplate(){
   const box = document.getElementById('validateResult');
   try{
     const body = new URLSearchParams({raw_yaml: raw});
-    const r = await fetch(`${API}/instructor/templates/validate`, {method:'POST', body});
+    const r = await apiFetch('/instructor/templates/validate', {method:'POST', body}, validateTemplate);
     const d = await r.json();
     if(r.ok){
       box.className = 'validate-result ok';
