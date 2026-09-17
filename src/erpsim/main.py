@@ -47,7 +47,7 @@ def make_engine(url: str):
 engine = make_engine(database_url())
 SQLModel.metadata.create_all(engine)
 
-app = FastAPI(title="ERP Decision Lab", version="0.1.0")
+app = FastAPI(title="ERP Decision Lab", version="0.3.0")
 
 _STATIC_DIR = Path(__file__).resolve().parents[2] / "static"
 if _STATIC_DIR.exists():
