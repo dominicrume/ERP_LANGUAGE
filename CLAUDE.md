@@ -5,8 +5,10 @@ high-level strategy simulations and daily transactional decision-making.
 Core thesis: localization (tax, currency, accounting rules per country) is
 proof the system teaches real business logic, not a UI skin.
 
-## Read rules first
-rules/ENGINEERING.md, rules/PRODUCT.md, rules/SCALING.md, and BREAK.md before any change.
+## Read first
+CONTEXT.md — what the product is, what is verified true today, what is left.
+Then rules/ENGINEERING.md, rules/PRODUCT.md, rules/SCALING.md, BREAK.md and
+DEBT.md before any change. PROMPT-02.md is the current build-to-v1.0 brief.
 
 ## Routing Table
 | Job Slug            | Workspace    | Entry Stage    |
