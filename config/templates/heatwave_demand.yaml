@@ -13,23 +13,32 @@ decisions:
     options: ["highest_value_first", "first_come_first_served", "strategic_accounts_first"]
     scoring:
       highest_value_first:
-        points: 8
-        reason: "'{choice}' allocation: {points:+d} pts vs. baseline."
+        impact:
+          cash_position: { points: 15 }
+          customer_satisfaction: { points: -5 }
+        reason: "Shipping the highest-value orders first protects cash, at the cost of the smaller accounts waiting: {delta} pts."
       strategic_accounts_first:
-        points: 5
-        reason: "'{choice}' allocation: {points:+d} pts vs. baseline."
+        impact:
+          cash_position: { points: 2 }
+          customer_satisfaction: { points: 10 }
+        reason: "Protecting strategic accounts keeps the relationships that matter most, with little cash benefit today: {delta} pts."
       first_come_first_served:
-        points: 0
-        reason: "'{choice}' allocation: {points:+d} pts vs. baseline."
+        impact:
+          cash_position: { points: 0 }
+          customer_satisfaction: { points: 2 }
+        reason: "First come, first served is fair and simple, and moves neither cash nor satisfaction much: {delta} pts."
   - id: freight_choice
     label: "Standard or expedited freight for replenishment?"
     options: ["standard", "expedite"]
     scoring:
       standard:
-        points: 0
-        reason: "Standard freight: no premium applied."
+        impact:
+          overhead_cost: { points: 0 }
+          customer_satisfaction: { points: -6 }
+        reason: "Standard freight adds no premium, but stock arrives late and customers feel it: {delta} pts."
       expedite:
-        points: -20
-        multiply_by: freight_expedite_multiplier
-        reason: "Expedite freight in {locale} carries a {freight_expedite_multiplier}x cost multiplier: {points:.1f} pts."
+        impact:
+          overhead_cost: { points: -40, scales_with: freight_expedite_multiplier }
+          customer_satisfaction: { points: 12 }
+        reason: "Expedite freight in {locale} carries a {freight_expedite_multiplier}x cost multiplier, bought back in service: {delta} pts."
 kpi_weights: { cash_position: 0.4, customer_satisfaction: 0.35, overhead_cost: 0.25 }

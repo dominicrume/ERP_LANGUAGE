@@ -46,7 +46,7 @@ def test_progress_is_per_locale_at_api(client):
     _score(client, locale="nigeria", choice="expedite", learner_id="frank")
     uk = client.get("/learners/frank/progress/heatwave_demand", params={"locale": "uk"}).json()
     ng = client.get("/learners/frank/progress/heatwave_demand", params={"locale": "nigeria"}).json()
-    assert uk["attempts"] == 1 and uk["best_score"] == 100.0
+    assert uk["attempts"] == 1 and uk["best_score"] == 97.9   # standard freight costs satisfaction
     assert ng["attempts"] == 1 and ng["best_score"] < 100.0
     total = client.get("/learners/frank/progress/heatwave_demand").json()
     assert total["attempts"] == 2

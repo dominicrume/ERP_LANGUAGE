@@ -18,10 +18,18 @@ def test_every_score_carries_justification():
     assert r["justification"]  # provenance, Rule 8
 
 
-def test_standard_freight_no_penalty():
-    s = generator.generate("heatwave_demand", "germany", seed=1)
-    r = scoring.score_decision(s, "freight_choice", "standard")
-    assert r["score_delta"] == 0
+def test_standard_freight_costs_less_than_expedite_and_is_the_same_everywhere():
+    """Under KPI weighting, waiting is not free: it costs satisfaction. What
+    must hold is that it never carries the freight premium, so unlike
+    expedite it scores identically in every country."""
+    deltas = {l: scoring.score_decision(generator.generate("heatwave_demand", l, 1),
+                                        "freight_choice", "standard")["score_delta"]
+              for l in locales.available()}
+    assert len(set(deltas.values())) == 1, deltas
+    for l, standard in deltas.items():
+        expedite = scoring.score_decision(generator.generate("heatwave_demand", l, 1),
+                                          "freight_choice", "expedite")["score_delta"]
+        assert standard > expedite, (l, standard, expedite)
 
 
 def test_every_option_of_every_template_scores_with_a_reason():

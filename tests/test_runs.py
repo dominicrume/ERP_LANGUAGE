@@ -5,10 +5,41 @@ B (a record counted clicks) and D (nothing ever finished), and they hold the
 BREAK.md Thief line: nobody plays in someone else's run, nobody answers
 twice, nobody finishes early.
 """
+import shutil
+
 import pytest
 
+from erpsim import templates
 
 TPL = "heatwave_demand"
+
+ALL_UPSIDE = """\
+id: all_upside
+industry: training
+title: "Nothing To Lose"
+narrative: "Every road leads somewhere good for {{product}}."
+product_pool: ["widgets"]
+decisions:
+  - id: pick
+    label: "Which good thing do you do?"
+    options: ["either", "or"]
+    scoring:
+      either:
+        impact: { margin: { points: 10 } }
+        reason: "A gain either way: {delta} pts."
+      or:
+        impact: { margin: { points: 4 } }
+        reason: "A smaller gain: {delta} pts."
+kpi_weights: { margin: 1.0 }
+"""
+
+
+@pytest.fixture
+def sandbox_templates(tmp_path, monkeypatch):
+    d = tmp_path / "templates"
+    shutil.copytree(templates._DIR, d)
+    monkeypatch.setattr(templates, "_DIR", d)
+    return d
 
 
 def _start(client, **over):
@@ -53,25 +84,36 @@ def test_starting_a_run_for_a_scenario_that_does_not_exist_is_404(client):
 
 # ---------------------------------------------------------------- the score
 def test_the_score_is_cumulative_across_the_whole_run(client):
-    """CONTEXT.md gap A, the defect this module exists to fix: +8 then -32
-    is 76, not 68. Before runs, the second decision overwrote the first."""
+    """CONTEXT.md gap A, the defect this module exists to fix. Before runs,
+    the second decision overwrote the first instead of adding to it."""
     run = _start(client, learner_id="amina")["run"]
     first = _decide(client, run["run_id"], "customer_allocation", "highest_value_first",
                     learner_id="amina").json()
     second = _decide(client, run["run_id"], "freight_choice", "expedite", learner_id="amina").json()
-    assert first["score_delta"] == 8 and second["score_delta"] == -32
-    assert first["score_so_far"] == 100.0        # 108 clamped: nobody scores above 100
-    assert first["raw_score_so_far"] == 108.0
-    assert second["score_so_far"] == 76.0        # 100 + 8 - 32, the honest total
+    assert first["score_delta"] == 4.2 and second["score_delta"] == -11.8
+    assert first["score_so_far"] == 100.0        # 104.2 clamped: nobody scores above 100
+    assert first["raw_score_so_far"] == 104.2
+    assert second["score_so_far"] == 92.4        # 100 + 4.2 - 11.8, the honest total
+    assert second["raw_score_so_far"] == 92.4
     assert second["decisions_answered"] == 2 and second["remaining_decision_ids"] == []
 
 
-def test_a_run_score_never_leaves_nought_to_a_hundred(client):
+@pytest.mark.parametrize("raw,shown", [
+    (143.0, 100.0), (100.0, 100.0), (61.26, 61.3), (0.0, 0.0), (-40.0, 0.0),
+    (4.25, 4.2),   # a .5 tie rounds to the even digit, as every score_delta does
+])
+def test_a_score_is_always_out_of_a_hundred(raw, shown):
+    """A learner reads a score out of 100. Anything outside that is noise."""
+    from erpsim.runs import clamp
+    assert clamp(raw) == shown
+
+
+def test_a_completed_run_reports_a_score_inside_that_range(client):
     run = _start(client, locale="nigeria")["run"]
     _play_all(client, run["run_id"], {"customer_allocation": "first_come_first_served",
                                       "freight_choice": "expedite"})
     body = client.post(f"/runs/{run['run_id']}/complete").json()
-    assert body["raw_score_so_far"] == 58.0
+    assert body["raw_score_so_far"] == 83.9
     assert 0.0 <= body["final_score"] <= 100.0
 
 
@@ -92,16 +134,28 @@ def test_a_run_finishes_with_a_final_score_and_the_costliest_decision(client):
     r = client.post(f"/runs/{run['run_id']}/complete", data={"learner_id": "amina"})
     assert r.status_code == 200
     body = r.json()
-    assert body["complete"] is True and body["final_score"] == 76.0
+    assert body["complete"] is True and body["final_score"] == 92.4
     assert body["completed_at"]
     assert body["biggest_mistake"]["decision_id"] == "freight_choice"
     assert "1.6x" in body["biggest_mistake"]["why"]
 
 
-def test_a_clean_run_reports_no_mistake(client):
+def test_the_costliest_decision_is_the_one_reported(client):
+    """Both freight options cost something now, so the summary must name the
+    worse one, not merely the last negative one."""
     run = _start(client)["run"]
     _play_all(client, run["run_id"], {"customer_allocation": "highest_value_first",
                                       "freight_choice": "standard"})
+    worst = client.post(f"/runs/{run['run_id']}/complete").json()["biggest_mistake"]
+    assert worst["decision_id"] == "freight_choice" and worst["score_delta"] == -2.1
+
+
+def test_a_run_with_nothing_negative_reports_no_mistake(client, sandbox_templates):
+    """A scenario whose every option is a gain must not invent a mistake."""
+    (sandbox_templates / "all_upside.yaml").write_text(ALL_UPSIDE)
+    r = client.post("/runs", data={"template_id": "all_upside", "locale": "uk", "seed": 1})
+    run = r.json()["run"]
+    _decide(client, run["run_id"], "pick", "either")
     assert client.post(f"/runs/{run['run_id']}/complete").json()["biggest_mistake"] is None
 
 
@@ -183,10 +237,10 @@ def test_a_run_can_be_reloaded_and_carried_on(client):
     reloaded = client.get(f"/runs/{run['run_id']}").json()
     assert reloaded["run"]["decisions_answered"] == 1
     assert reloaded["run"]["remaining_decision_ids"] == ["freight_choice"]
-    assert reloaded["run"]["score_so_far"] == 100.0
+    assert reloaded["run"]["score_so_far"] == 100.0      # 104.2 raw, clamped
     assert reloaded["scenario"]["title"] == "Heat Wave Demand Spike"
     r = _decide(client, run["run_id"], "freight_choice", "expedite", learner_id="amina")
-    assert r.status_code == 200 and r.json()["score_so_far"] == 76.0
+    assert r.status_code == 200 and r.json()["score_so_far"] == 92.4
 
 
 def test_the_scenario_a_run_replays_is_always_the_one_that_was_played(client):
@@ -198,8 +252,8 @@ def test_the_scenario_a_run_replays_is_always_the_one_that_was_played(client):
     assert first == again
 
 
-@pytest.mark.parametrize("locale,expected", [("uk", 68.0), ("germany", 70.0),
-                                             ("nigeria", 58.0), ("brazil", 62.0)])
+@pytest.mark.parametrize("locale,expected", [("uk", 88.9), ("germany", 89.9),
+                                             ("nigeria", 83.9), ("brazil", 85.9)])
 def test_the_same_run_in_four_countries_ends_on_four_different_scores(client, locale, expected):
     """The localization thesis, now measured on a whole sitting."""
     run = _start(client, locale=locale)["run"]

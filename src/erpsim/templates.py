@@ -65,7 +65,25 @@ def load(template_id: str) -> dict:
     return _load_file(p)
 
 
-def _validate_decision(d: dict) -> None:
+def _validate_impact(did: str, opt: str, impact, kpis: set) -> None:
+    """An impact names KPIs the template actually measures, so a weight
+    change always moves the score and never silently misses."""
+    if not isinstance(impact, dict) or not impact:
+        raise InvalidTemplateError(f"decision '{did}' option '{opt}': impact must name at least one KPI")
+    for kpi, effect in impact.items():
+        if kpi not in kpis:
+            raise InvalidTemplateError(f"decision '{did}' option '{opt}': '{kpi}' is not one of this "
+                                       f"template's KPIs {sorted(kpis)}")
+        if not isinstance(effect, dict) or not isinstance(effect.get("points"), (int, float)) \
+                or isinstance(effect.get("points"), bool):
+            raise InvalidTemplateError(f"decision '{did}' option '{opt}', KPI '{kpi}': needs numeric 'points'")
+        scales = effect.get("scales_with")
+        if scales is not None and scales not in LOCALE_RULE_FIELDS:
+            raise InvalidTemplateError(f"decision '{did}' option '{opt}', KPI '{kpi}': scales_with must be "
+                                       f"one of {list(LOCALE_RULE_FIELDS)}, got '{scales}'")
+
+
+def _validate_decision(d: dict, kpis: set) -> None:
     for key in ("id", "label", "options", "scoring"):
         if key not in d:
             raise InvalidTemplateError(f"decision is missing '{key}'")
@@ -81,9 +99,13 @@ def _validate_decision(d: dict) -> None:
     if extra:
         raise InvalidTemplateError(f"decision '{did}': scoring rules for unknown options {sorted(extra)}")
     for opt, rule in d["scoring"].items():
-        if not isinstance(rule, dict) or not isinstance(rule.get("points"), (int, float)) \
-                or isinstance(rule.get("points"), bool):
-            raise InvalidTemplateError(f"decision '{did}' option '{opt}': scoring needs numeric 'points'")
+        if not isinstance(rule, dict):
+            raise InvalidTemplateError(f"decision '{did}' option '{opt}': scoring must be a mapping")
+        if "impact" in rule:
+            _validate_impact(did, opt, rule["impact"], kpis)
+        elif not isinstance(rule.get("points"), (int, float)) or isinstance(rule.get("points"), bool):
+            raise InvalidTemplateError(f"decision '{did}' option '{opt}': scoring needs an 'impact' "
+                                       f"on the template's KPIs, or a numeric 'points'")
         if not isinstance(rule.get("reason"), str) or not rule["reason"].strip():
             raise InvalidTemplateError(f"decision '{did}' option '{opt}': scoring needs a 'reason' string")
         mult = rule.get("multiply_by")
@@ -110,5 +132,6 @@ def validate(data: dict) -> None:
         raise InvalidTemplateError("template must define at least one decision")
     if not data["product_pool"]:
         raise InvalidTemplateError("product_pool must list at least one product")
+    kpis = set(data["kpi_weights"])
     for d in data["decisions"]:
-        _validate_decision(d)
+        _validate_decision(d, kpis)

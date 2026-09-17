@@ -72,6 +72,37 @@ def reason_to_friendly(template_reason: str) -> str:
 
 
 # ---------------------------------------------------------------- draft -> template
+def _impact_from_draft(decision_label: str, option_label: str, impacts: list, kpi_keys: dict) -> dict:
+    """Turn the builder's per-KPI rows into the template's impact mapping.
+    An impact on a KPI the scenario does not measure is refused here, in the
+    instructor's own words, rather than at publish time."""
+    out = {}
+    for row in impacts:
+        key = slug(row.get("kpi"))
+        if key not in kpi_keys:
+            raise DraftError(f"Decision '{decision_label}', option '{option_label}': "
+                             f"'{row.get('kpi')}' is not one of the KPIs this scenario measures "
+                             f"({', '.join(kpi_keys.values()) or 'none yet'})")
+        if key in out:
+            raise DraftError(f"Decision '{decision_label}', option '{option_label}': "
+                             f"'{row.get('kpi')}' is listed twice")
+        try:
+            pts = row.get("points", 0)
+            pts = int(pts) if float(pts).is_integer() else float(pts)
+        except (TypeError, ValueError):
+            raise DraftError(f"Decision '{decision_label}', option '{option_label}', "
+                             f"KPI '{row.get('kpi')}': points must be a number")
+        effect = {"points": pts}
+        scales = row.get("scales_with") or None
+        if scales:
+            if scales not in SCALES_WITH:
+                raise DraftError(f"Decision '{decision_label}', option '{option_label}': can only scale with "
+                                 f"{', '.join(SCALES_WITH.values())}")
+            effect["scales_with"] = scales
+        out[key] = effect
+    return out
+
+
 def _req(d: dict, key: str, what: str) -> Any:
     v = d.get(key)
     if v is None or (isinstance(v, str) and not v.strip()):
@@ -96,6 +127,9 @@ def from_draft(draft: dict) -> dict:
     if "{{product}}" not in narrative:
         raise DraftError("The story needs to mention the product: use 'Insert product' where it belongs")
 
+    kpis_in = draft.get("kpi_weights") or {}
+    kpi_keys = {slug(name): name for name in kpis_in if slug(name)}
+
     decisions_in = draft.get("decisions") or []
     if not decisions_in:
         raise DraftError("Add at least one decision")
@@ -118,26 +152,31 @@ def from_draft(draft: dict) -> dict:
             if not oid or oid in seen_opt:
                 raise DraftError(f"Decision '{label}': option names must be distinct ('{olabel}')")
             seen_opt.add(oid)
-            try:
-                points = o.get("points", 0)
-                points = int(points) if float(points).is_integer() else float(points)
-            except (TypeError, ValueError):
-                raise DraftError(f"Decision '{label}', option '{olabel}': points must be a number")
             reason = str(o.get("reason") or "").strip()
             if not reason:
                 raise DraftError(f"Decision '{label}', option '{olabel}': write the reason learners will see")
-            rule = {"points": points, "reason": reason_to_template(reason)}
-            mult = o.get("multiply_by") or None
-            if mult:
-                if mult not in SCALES_WITH:
-                    raise DraftError(f"Decision '{label}', option '{olabel}': can only scale with "
-                                     f"{', '.join(SCALES_WITH.values())}")
-                rule["multiply_by"] = mult
+            rule = {"reason": reason_to_template(reason)}
+            impacts = [i for i in (o.get("impacts") or []) if str(i.get("kpi") or "").strip()]
+            if impacts:
+                rule["impact"] = _impact_from_draft(label, olabel, impacts, kpi_keys)
+            else:
+                # Legacy, unweighted: a single points value on the option.
+                try:
+                    points = o.get("points", 0)
+                    points = int(points) if float(points).is_integer() else float(points)
+                except (TypeError, ValueError):
+                    raise DraftError(f"Decision '{label}', option '{olabel}': points must be a number")
+                rule["points"] = points
+                mult = o.get("multiply_by") or None
+                if mult:
+                    if mult not in SCALES_WITH:
+                        raise DraftError(f"Decision '{label}', option '{olabel}': can only scale with "
+                                         f"{', '.join(SCALES_WITH.values())}")
+                    rule["multiply_by"] = mult
             options.append(oid)
             scoring_block[oid] = rule
         decisions.append({"id": did, "label": label, "options": options, "scoring": scoring_block})
 
-    kpis_in = draft.get("kpi_weights") or {}
     kpis = {}
     for name, pct in kpis_in.items():
         key = slug(name)
@@ -169,8 +208,14 @@ def to_draft(tpl: dict) -> dict:
         opts = []
         for oid in d["options"]:
             rule = d["scoring"][oid]
-            opts.append({"id": oid, "label": oid.replace("_", " "), "points": rule["points"],
-                         "multiply_by": rule.get("multiply_by"), "reason": reason_to_friendly(rule["reason"])})
+            opt = {"id": oid, "label": oid.replace("_", " "),
+                   "reason": reason_to_friendly(rule["reason"]),
+                   "impacts": [], "points": rule.get("points", 0),
+                   "multiply_by": rule.get("multiply_by")}
+            for kpi, effect in (rule.get("impact") or {}).items():
+                opt["impacts"].append({"kpi": kpi.replace("_", " "), "points": effect["points"],
+                                       "scales_with": effect.get("scales_with")})
+            opts.append(opt)
         decisions.append({"id": d["id"], "label": d["label"], "options": opts})
     return {"id": tpl["id"], "title": tpl["title"], "industry": tpl["industry"],
             "narrative": tpl["narrative"].strip(), "product_pool": list(tpl["product_pool"]),
