@@ -175,6 +175,9 @@ decisions:
   - id: choice_a
     label: &quot;What do you do?&quot;
     options: [&quot;option_1&quot;, &quot;option_2&quot;]
+    scoring:
+      option_1: { points: 5, reason: &quot;Why this earns {points:+d} pts.&quot; }
+      option_2: { points: -10, multiply_by: freight_expedite_multiplier, reason: &quot;Costs {freight_expedite_multiplier}x more in {locale}: {points:.1f} pts.&quot; }
 kpi_weights: { cash_position: 1.0 }"></textarea>
   <div style="margin-top:12px">
     <button class="btn btn-primary" onclick="validateTemplate()">Validate template</button>

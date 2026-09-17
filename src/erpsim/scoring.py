@@ -1,33 +1,42 @@
-"""Decision scoring — locale-aware. The SAME decision scores differently
-under different tax/freight rules (Rule 8: justification always stored)."""
+"""Decision scoring — a generic interpreter over the template's own scoring
+rules (Rule 2: templates are data, never code). The SAME choice scores
+differently under different locales because a rule may multiply its points
+by a locale_rules field. Every result carries its justification (Rule 8)."""
 from typing import Any, Dict
+
+
+class ScoringError(ValueError):
+    """Loud failure: the decision or choice has no rule in this template."""
+
+
+def _find_decision(scenario: Dict[str, Any], decision_id: str) -> Dict[str, Any]:
+    for d in scenario["decisions"]:
+        if d["id"] == decision_id:
+            return d
+    raise ScoringError(f"no decision '{decision_id}' in template '{scenario['template_id']}'")
 
 
 def score_decision(scenario: Dict[str, Any], decision_id: str, choice: str) -> Dict[str, Any]:
     rules = scenario["locale_rules"]
-    base = 100.0
-    justification = []
+    decision = _find_decision(scenario, decision_id)
+    try:
+        rule = decision["scoring"][choice]
+    except KeyError:
+        raise ScoringError(f"choice '{choice}' has no scoring rule for '{decision_id}'. "
+                           f"Options: {decision['options']}") from None
 
-    if decision_id == "freight_choice":
-        if choice == "expedite":
-            penalty = 20 * rules["freight_expedite_multiplier"]
-            base -= penalty
-            justification.append(
-                f"Expedite freight in {scenario['locale']} carries a "
-                f"{rules['freight_expedite_multiplier']}x cost multiplier: -{penalty:.1f} pts."
-            )
-        else:
-            justification.append("Standard freight: no premium applied.")
+    points = rule["points"]
+    if rule.get("multiply_by"):
+        points = points * rules[rule["multiply_by"]]
 
-    if decision_id == "customer_allocation":
-        bonus = {"highest_value_first": 8, "strategic_accounts_first": 5,
-                 "first_come_first_served": 0}.get(choice, 0)
-        base += bonus
-        justification.append(f"'{choice}' allocation: {'+' if bonus>=0 else ''}{bonus} pts vs. baseline.")
+    ctx = {**rules, "locale": scenario["locale"], "currency": scenario["currency"],
+           "choice": choice, "points": points}
+    justification = [rule["reason"].format(**ctx)]
+    justification.append(
+        f"Reminder: {rules['tax_type']} at {rules['tax_rate']*100:.1f}% "
+        f"applies to this transaction in {scenario['locale']}. {rules['tax_notes']}"
+    )
 
-    tax_note = (f"Reminder: {rules['tax_type']} at {rules['tax_rate']*100:.1f}% "
-                f"applies to this transaction in {scenario['locale']}. {rules['tax_notes']}")
-    justification.append(tax_note)
-
+    base = 100.0 + points
     return {"decision_id": decision_id, "choice": choice, "score_delta": round(base - 100.0, 1),
             "running_score": round(base, 1), "justification": justification}

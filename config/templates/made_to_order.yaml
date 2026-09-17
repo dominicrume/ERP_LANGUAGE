@@ -9,7 +9,25 @@ decisions:
   - id: sequencing
     label: "How do you sequence the backlog?"
     options: ["earliest_due_date", "shortest_job_first", "highest_margin_first"]
+    scoring:
+      earliest_due_date:
+        points: 8
+        reason: "Earliest-due-date sequencing protects on-time delivery, the heaviest KPI here: {points:+d} pts."
+      shortest_job_first:
+        points: 2
+        reason: "Shortest-job-first clears the queue fast but lets big late orders slip: {points:+d} pts."
+      highest_margin_first:
+        points: 4
+        reason: "Highest-margin-first lifts margin but risks the on-time KPI: {points:+d} pts."
   - id: subcontract
     label: "Subcontract overflow capacity?"
     options: ["yes", "no"]
+    scoring:
+      "yes":
+        points: -6
+        multiply_by: freight_expedite_multiplier
+        reason: "Subcontracted overflow in {locale} ships inbound at the {freight_expedite_multiplier}x expedite rate: {points:.1f} pts against margin."
+      "no":
+        points: -5
+        reason: "Refusing overflow keeps margin but the backlog slips past due dates: {points:+d} pts against on-time delivery."
 kpi_weights: { on_time_delivery: 0.45, margin: 0.35, capacity_utilisation: 0.20 }

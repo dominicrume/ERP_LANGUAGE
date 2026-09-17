@@ -52,6 +52,8 @@ def score(template_id: str = Form(...), locale: str = Form(...), seed: int = For
         scenario = generator.generate(template_id, locale, seed)
     except (templates.UnknownTemplateError, locales.UnknownLocaleError) as e:
         raise HTTPException(404, str(e))
+    except templates.InvalidTemplateError as e:
+        raise HTTPException(422, str(e))
     decision = next((d for d in scenario["decisions"] if d["id"] == decision_id), None)
     if decision is None:
         valid_ids = sorted(d["id"] for d in scenario["decisions"])
@@ -60,7 +62,10 @@ def score(template_id: str = Form(...), locale: str = Form(...), seed: int = For
         # BREAK.md #3: reject before scoring and before any memory write.
         raise HTTPException(422, f"choice '{choice}' is not an option for "
                                  f"'{decision_id}'. Options: {decision['options']}")
-    result = scoring.score_decision(scenario, decision_id, choice)
+    try:
+        result = scoring.score_decision(scenario, decision_id, choice)
+    except scoring.ScoringError as e:
+        raise HTTPException(422, str(e))
     if learner_id:
         with Session(engine) as s:
             memory.record_attempt(s, learner_id, template_id, locale, result["running_score"])
