@@ -29,3 +29,33 @@ jobs:
 
       - name: make check
         run: ./scripts/check.sh
+
+  postgres:
+    name: the DSN swap, against a real Postgres
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: erpsim
+          POSTGRES_PASSWORD: erpsim
+          POSTGRES_DB: erpsim
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U erpsim"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install with the postgres driver
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install -e ".[postgres]"
+      - name: Run the Postgres proof
+        env:
+          ERPSIM_TEST_POSTGRES_URL: postgresql+psycopg://erpsim:erpsim@localhost:5432/erpsim
+        run: .venv/bin/python -m pytest tests/test_postgres.py -v

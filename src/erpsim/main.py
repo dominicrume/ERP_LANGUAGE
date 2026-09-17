@@ -3,12 +3,13 @@ import os
 from typing import Optional
 
 from pathlib import Path
-from fastapi import Body, FastAPI, Form, HTTPException
+from fastapi import Body, FastAPI, Form, HTTPException, Response
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import event, text
 from sqlmodel import Session, create_engine
 
-from erpsim import authoring, generator, locales, memory, migrations, runs, scoring, templates
+from erpsim import authoring, generator, locales, memory, migrations, runs, scoring, templates, web
 
 DEFAULT_DATABASE_URL = "sqlite:///erpsim.db"
 LEARNER_ID_MAX = 64
@@ -41,14 +42,31 @@ def engine_kwargs(url: str) -> dict:
 
 
 def make_engine(url: str):
-    return create_engine(url, **engine_kwargs(url))
+    engine = create_engine(url, **engine_kwargs(url))
+    if url.startswith("sqlite") and ":memory:" not in url and url != "sqlite://":
+        # WAL lets readers carry on while a sitting is being recorded, and a
+        # busy timeout makes a writer wait its turn instead of erroring.
+        @event.listens_for(engine, "connect")
+        def _sqlite_pragmas(dbapi_connection, _record):   # pragma: no cover - driver level
+            cur = dbapi_connection.cursor()
+            cur.execute("PRAGMA journal_mode=WAL")
+            cur.execute("PRAGMA busy_timeout=5000")
+            cur.execute("PRAGMA foreign_keys=ON")
+            cur.close()
+    return engine
 
 
 engine = make_engine(database_url())
 # Versioned schema: adds what is missing, never guesses at existing data.
 migrations.migrate(engine)
 
-app = FastAPI(title="ERP Decision Lab", version="1.1.0")
+VERSION = "1.1.0"
+
+app = FastAPI(title="ERP Decision Lab", version=VERSION,
+              # Interactive docs are useful in a demo and noise in production.
+              docs_url="/docs" if web._env_flag("ERPSIM_PUBLIC_DOCS", True) else None,
+              redoc_url="/redoc" if web._env_flag("ERPSIM_PUBLIC_DOCS", True) else None)
+web.install(app)
 
 _STATIC_DIR = Path(__file__).resolve().parents[2] / "static"
 if _STATIC_DIR.exists():
@@ -296,5 +314,28 @@ def publish_draft(draft: dict = Body(...), overwrite: bool = False):
 
 
 @app.get("/health")
-def health():
-    return {"status": "ok", "templates": len(templates.available()), "locales": len(locales.available())}
+def health(response: Response):
+    """Deep enough to be worth alerting on: the database answers, the schema
+    is the one this build knows, and there is content to play."""
+    checks = {}
+    try:
+        with Session(engine) as s:
+            s.execute(text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception as e:                                   # pragma: no cover - failure path
+        checks["database"] = f"unreachable: {type(e).__name__}"
+    try:
+        version = migrations.current_version(engine)
+        checks["schema"] = ("ok" if version == migrations.LATEST
+                            else f"v{version}, expected v{migrations.LATEST}")
+    except Exception as e:                                   # pragma: no cover - failure path
+        checks["schema"] = f"unreadable: {type(e).__name__}"
+    shipped_templates, shipped_locales = templates.available(), locales.available()
+    checks["content"] = "ok" if shipped_templates and shipped_locales else "no playable scenarios"
+
+    healthy = all(v == "ok" for v in checks.values())
+    if not healthy:
+        response.status_code = 503
+    return {"status": "ok" if healthy else "degraded", "version": VERSION, "checks": checks,
+            "templates": len(shipped_templates), "locales": len(shipped_locales),
+            "scenarios": len(shipped_templates) * len(shipped_locales)}

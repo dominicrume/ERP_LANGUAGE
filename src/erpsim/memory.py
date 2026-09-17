@@ -11,9 +11,9 @@ Streak rule, stated here because a learner is told it in the product:
 a streak is the number of consecutive calendar days on which the learner
 completed at least one run. Two runs in a day do not raise it. Missing a
 day resets it to 1 on the next completion."""
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import UniqueConstraint, text
 from sqlmodel import Field, Session, SQLModel, select
 
 
@@ -59,19 +59,37 @@ def recall_all(session: Session, learner_id: str, template_id: str) -> list[Lear
     return list(session.exec(stmt))
 
 
+KEY = "learner_id = :learner AND template_id = :template AND locale = :locale"
+
+
+def _ensure_row(session: Session, learner_id: str, template_id: str, locale: str) -> None:
+    """Create the row if it is not there, without racing another writer.
+    ON CONFLICT DO NOTHING is understood by both SQLite and Postgres, so two
+    simultaneous first-finishers cannot both insert."""
+    session.execute(text(
+        "INSERT INTO learnerprogress "
+        "(learner_id, template_id, locale, attempts, best_score, runs_completed, "
+        " current_streak, longest_streak, updated_at) "
+        "VALUES (:learner, :template, :locale, 0, 0.0, 0, 0, 0, :now) "
+        "ON CONFLICT DO NOTHING"),
+        {"learner": learner_id, "template": template_id, "locale": locale,
+         "now": datetime.now(timezone.utc)})
+
+
 def record_attempt(session: Session, learner_id: str, template_id: str, locale: str,
                     score: float, mistake: Optional[str] = None) -> LearnerProgress:
+    """Legacy path: one decision scored outside a run. Counted in SQL so two
+    writers cannot both read the same total and both write it back."""
     locale = locale.lower()
-    progress = recall(session, learner_id, template_id, locale)
-    if progress is None:
-        progress = LearnerProgress(learner_id=learner_id, template_id=template_id, locale=locale)
-    progress.attempts += 1
-    progress.best_score = max(progress.best_score, score)
-    if mistake:
-        progress.last_mistake = mistake
-    progress.updated_at = datetime.now(timezone.utc)
-    session.add(progress); session.commit(); session.refresh(progress)
-    return progress
+    _ensure_row(session, learner_id, template_id, locale)
+    session.execute(text(
+        f"UPDATE learnerprogress SET attempts = attempts + 1, "
+        f"best_score = CASE WHEN best_score < :score THEN :score ELSE best_score END, "
+        f"last_mistake = COALESCE(:mistake, last_mistake), updated_at = :now WHERE {KEY}"),
+        {"score": score, "mistake": mistake, "now": datetime.now(timezone.utc),
+         "learner": learner_id, "template": template_id, "locale": locale})
+    session.commit()
+    return recall(session, learner_id, template_id, locale)
 
 
 def next_streak(previous_day: Optional[date], today: date, current: int) -> int:
@@ -89,21 +107,41 @@ def next_streak(previous_day: Optional[date], today: date, current: int) -> int:
 def record_run(session: Session, learner_id: str, template_id: str, locale: str,
                final_score: float, mistake: Optional[str] = None,
                on_day: Optional[date] = None) -> LearnerProgress:
-    """One completed sitting. This is the only thing that moves a learner's
-    visible record."""
+    """One completed sitting. The only thing that moves a learner's visible
+    record.
+
+    Every field is computed in SQL against the row's own current values, so
+    two sittings finishing at the same moment both count. Doing this in
+    Python meant reading, adding one, and writing back, which lost one of
+    the two whenever the reads overlapped.
+    """
     locale = locale.lower()
     today = on_day or datetime.now(timezone.utc).date()
-    progress = recall(session, learner_id, template_id, locale)
-    if progress is None:
-        progress = LearnerProgress(learner_id=learner_id, template_id=template_id, locale=locale)
-    progress.runs_completed += 1
-    progress.best_run_score = (final_score if progress.best_run_score is None
-                               else max(progress.best_run_score, final_score))
-    progress.current_streak = next_streak(progress.last_completed_on, today, progress.current_streak)
-    progress.longest_streak = max(progress.longest_streak, progress.current_streak)
-    progress.last_completed_on = today
-    if mistake:
-        progress.last_mistake = mistake
-    progress.updated_at = datetime.now(timezone.utc)
-    session.add(progress); session.commit(); session.refresh(progress)
-    return progress
+    yesterday = today - timedelta(days=1)
+    params = {"score": final_score, "mistake": mistake, "today": today, "yesterday": yesterday,
+              "now": datetime.now(timezone.utc),
+              "learner": learner_id, "template": template_id, "locale": locale}
+
+    _ensure_row(session, learner_id, template_id, locale)
+    # The streak rule, in SQL: same day holds, the next day adds one, a gap
+    # starts again at one. (See next_streak, which states the same rule for
+    # the tests and for anyone reading this module.)
+    session.execute(text(
+        f"UPDATE learnerprogress SET "
+        f"  runs_completed = runs_completed + 1, "
+        f"  best_run_score = CASE WHEN best_run_score IS NULL OR best_run_score < :score "
+        f"                        THEN :score ELSE best_run_score END, "
+        f"  current_streak = CASE "
+        f"      WHEN last_completed_on IS NULL THEN 1 "
+        f"      WHEN last_completed_on = :today THEN CASE WHEN current_streak < 1 THEN 1 ELSE current_streak END "
+        f"      WHEN last_completed_on = :yesterday THEN current_streak + 1 "
+        f"      ELSE 1 END, "
+        f"  last_completed_on = :today, "
+        f"  last_mistake = COALESCE(:mistake, last_mistake), "
+        f"  updated_at = :now "
+        f"WHERE {KEY}"), params)
+    session.execute(text(
+        f"UPDATE learnerprogress SET longest_streak = current_streak "
+        f"WHERE {KEY} AND current_streak > longest_streak"), params)
+    session.commit()
+    return recall(session, learner_id, template_id, locale)

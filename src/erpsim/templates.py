@@ -4,9 +4,13 @@ import logging
 import re
 from pathlib import Path
 from string import Formatter
+from threading import Lock
 import yaml
 
 from .locales import LOCALE_RULE_FIELDS
+
+_CACHE = {}
+_CACHE_LOCK = Lock()
 
 log = logging.getLogger("erpsim.templates")
 _DIR = Path(__file__).resolve().parents[2] / "config" / "templates"
@@ -29,6 +33,27 @@ class UnloadableTemplateError(UnknownTemplateError):
 
 
 def _load_file(p: Path) -> dict:
+    """Parsed once per file version. A template file is read from disk again
+    only when its timestamp or size changes, so editing one still takes
+    effect without a restart (ENGINEERING.md Rule 2 stays true)."""
+    try:
+        stat = p.stat()
+    except OSError:                                    # pragma: no cover - raced deletion
+        stat = None
+    key = (str(p), stat.st_mtime_ns, stat.st_size) if stat else (str(p), 0, 0)
+    with _CACHE_LOCK:
+        hit = _CACHE.get(key)
+    if hit is not None:
+        return hit
+    data = _parse_file(p)
+    with _CACHE_LOCK:
+        if len(_CACHE) > 512:                          # pragma: no cover - housekeeping
+            _CACHE.clear()
+        _CACHE[key] = data
+    return data
+
+
+def _parse_file(p: Path) -> dict:
     try:
         data = yaml.safe_load(p.read_text())
     except yaml.YAMLError as e:

@@ -10,5 +10,7 @@ dev = ["pytest>=8.0", "httpx"]
 # Browser proof of the authoring flow (BREAK.md hat 2). After installing:
 #     playwright install chromium
 ui = ["pytest>=8.0", "httpx", "playwright>=1.40"]
+# Proving SCALING.md #1: the same suite against a real Postgres.
+postgres = ["pytest>=8.0", "httpx", "psycopg[binary]>=3.1"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]

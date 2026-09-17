@@ -1,0 +1,32 @@
+# The deployment this is actually headed for: the app against Postgres,
+# which is the DSN swap SCALING.md #1 promises. Proven by
+# tests/test_postgres.py, which CI runs against a real server.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: erpsim
+      POSTGRES_PASSWORD: erpsim
+      POSTGRES_DB: erpsim
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erpsim"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - erpsim-data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ERPSIM_DATABASE_URL: postgresql+psycopg://erpsim:erpsim@db:5432/erpsim
+      ERPSIM_PUBLIC_DOCS: "false"
+      ERPSIM_HTTPS_ONLY: "false"     # set true behind TLS
+    ports:
+      - "8000:8000"
+
+volumes:
+  erpsim-data:

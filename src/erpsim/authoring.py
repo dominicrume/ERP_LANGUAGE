@@ -48,6 +48,17 @@ SCALES_WITH = {
 ARCHIVE_DIR = "_archive"
 
 
+# A scenario is prose, not a payload. These caps keep an authored file
+# readable and keep junk out of config/templates, where it would be served
+# to every learner. They are generous for real writing and hostile to a
+# script (the body-size limit in web.py is the outer bound).
+LIMITS = {
+    "title": 120, "industry": 60, "narrative": 2000, "product": 80, "label": 200,
+    "option_label": 120, "reason": 400, "kpi_name": 60,
+}
+COUNTS = {"products": 24, "decisions": 12, "options": 8, "impacts": 8, "kpis": 8}
+
+
 class DraftError(ValueError):
     """Instructor-facing validation failure. Message is plain language."""
 
@@ -103,6 +114,23 @@ def _impact_from_draft(decision_label: str, option_label: str, impacts: list, kp
     return out
 
 
+def _capped(value: str, limit_key: str, what: str) -> str:
+    """Length checks that read like a person wrote them, because an
+    instructor sees them."""
+    text = str(value).strip()
+    limit = LIMITS[limit_key]
+    if len(text) > limit:
+        raise DraftError(f"{what} is too long: {len(text)} characters, the most is {limit}")
+    return text
+
+
+def _counted(items: list, count_key: str, what: str) -> list:
+    limit = COUNTS[count_key]
+    if len(items) > limit:
+        raise DraftError(f"{what}: {len(items)} is more than the most this supports, {limit}")
+    return items
+
+
 def _req(d: dict, key: str, what: str) -> Any:
     v = d.get(key)
     if v is None or (isinstance(v, str) and not v.strip()):
@@ -115,13 +143,15 @@ def from_draft(draft: dict) -> dict:
     with a sentence an instructor can act on."""
     if not isinstance(draft, dict):
         raise DraftError("draft must be an object")
-    title = str(_req(draft, "title", "A title")).strip()
+    title = _capped(_req(draft, "title", "A title"), "title", "The title")
     tid = str(draft.get("id") or slug(title)).strip()
     if not templates.ID_PATTERN.match(tid):
         raise DraftError("The short id may only use lowercase letters, digits and underscores (1-64 chars)")
-    industry = str(_req(draft, "industry", "An industry")).strip()
-    narrative = str(_req(draft, "narrative", "The story")).strip()
-    products = [str(p).strip() for p in (draft.get("product_pool") or []) if str(p).strip()]
+    industry = _capped(_req(draft, "industry", "An industry"), "industry", "The industry")
+    narrative = _capped(_req(draft, "narrative", "The story"), "narrative", "The story")
+    products = [_capped(p, "product", "A product name")
+                for p in _counted(list(draft.get("product_pool") or []), "products", "Products")
+                if str(p).strip()]
     if not products:
         raise DraftError("Add at least one product the story can be about")
     if "{{product}}" not in narrative:
@@ -133,30 +163,36 @@ def from_draft(draft: dict) -> dict:
     decisions_in = draft.get("decisions") or []
     if not decisions_in:
         raise DraftError("Add at least one decision")
+    _counted(decisions_in, "decisions", "Decisions")
     decisions, seen = [], set()
     for i, d in enumerate(decisions_in, 1):
-        label = str(_req(d, "label", f"Decision {i}'s question")).strip()
+        label = _capped(_req(d, "label", f"Decision {i}'s question"), "label",
+                        f"Decision {i}'s question")
         did = str(d.get("id") or slug(label)).strip()
         if not templates.ID_PATTERN.match(did):
             raise DraftError(f"Decision {i}: the short name may only use lowercase letters, digits and underscores")
         if did in seen:
             raise DraftError(f"Decision {i}: the short name '{did}' is already used by another decision")
         seen.add(did)
-        opts_in = d.get("options") or []
+        opts_in = _counted(list(d.get("options") or []), "options", f"Decision '{label}' options")
         if len(opts_in) < 2:
             raise DraftError(f"Decision '{label}' needs at least two options")
         options, scoring_block, seen_opt = [], {}, set()
         for j, o in enumerate(opts_in, 1):
-            olabel = str(_req(o, "label", f"Decision '{label}', option {j}'s name")).strip()
+            olabel = _capped(_req(o, "label", f"Decision '{label}', option {j}'s name"),
+                             "option_label", f"Decision '{label}', option {j}'s name")
             oid = str(o.get("id") or slug(olabel)).strip()
             if not oid or oid in seen_opt:
                 raise DraftError(f"Decision '{label}': option names must be distinct ('{olabel}')")
             seen_opt.add(oid)
-            reason = str(o.get("reason") or "").strip()
+            reason = _capped(o.get("reason") or "", "reason",
+                             f"Decision '{label}', option '{olabel}': the reason")
             if not reason:
                 raise DraftError(f"Decision '{label}', option '{olabel}': write the reason learners will see")
             rule = {"reason": reason_to_template(reason)}
-            impacts = [i for i in (o.get("impacts") or []) if str(i.get("kpi") or "").strip()]
+            impacts = [i for i in _counted(list(o.get("impacts") or []), "impacts",
+                                          f"Decision '{label}', option '{olabel}': measures")
+                       if str(i.get("kpi") or "").strip()]
             if impacts:
                 rule["impact"] = _impact_from_draft(label, olabel, impacts, kpi_keys)
             elif "points" not in o:
@@ -183,7 +219,9 @@ def from_draft(draft: dict) -> dict:
         decisions.append({"id": did, "label": label, "options": options, "scoring": scoring_block})
 
     kpis = {}
+    _counted(list(kpis_in), "kpis", "Measures")
     for name, pct in kpis_in.items():
+        _capped(name, "kpi_name", f"The measure name '{name}'")
         key = slug(name)
         if not key:
             continue

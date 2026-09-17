@@ -306,3 +306,30 @@ def test_preview_carries_the_kpi_breakdown_for_every_option():
     rows = p["locales"][0]["decisions"][0]["options"][0]["kpi_breakdown"]
     assert {r["kpi"] for r in rows} == {"margin", "customer_satisfaction"}
     assert all("weighted" in r for r in rows)
+
+
+# ---- size limits: an authored file is prose, not a payload ----
+
+@pytest.mark.parametrize("field,value,fragment", [
+    ("title", "x" * 200, "The title is too long"),
+    ("industry", "y" * 100, "The industry is too long"),
+    ("narrative", "n {{product}} " + "z" * 3000, "The story is too long"),
+])
+def test_an_oversized_field_is_refused_in_plain_words(field, value, fragment):
+    with pytest.raises(authoring.DraftError, match=fragment):
+        authoring.from_draft(impact_draft(**{field: value}))
+
+
+def test_too_many_products_or_decisions_are_refused():
+    with pytest.raises(authoring.DraftError, match="Products: 30 is more than"):
+        authoring.from_draft(impact_draft(product_pool=[f"p{i}" for i in range(30)]))
+    one = impact_draft()["decisions"][0]
+    with pytest.raises(authoring.DraftError, match="Decisions: 20 is more than"):
+        authoring.from_draft(impact_draft(decisions=[dict(one) for _ in range(20)]))
+
+
+def test_an_ordinary_scenario_is_nowhere_near_the_limits():
+    tpl = authoring.from_draft(impact_draft())
+    assert tpl["title"] and len(tpl["decisions"]) == 1
+    for tid in templates.available():          # and neither is anything shipped
+        authoring.from_draft(authoring.to_draft(templates.load(tid)))

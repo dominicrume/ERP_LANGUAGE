@@ -5,6 +5,10 @@ import os
 # Importing the app builds its engine. Point it at memory BEFORE the import
 # so a test run never creates or touches ./erpsim.db in the working dir.
 os.environ.setdefault("ERPSIM_DATABASE_URL", "sqlite://")
+# The write limiter protects a running demo from one noisy client. A test run
+# is one client making thousands of writes on purpose, so it is off here and
+# exercised directly in tests/test_web_hardening.py.
+os.environ.setdefault("ERPSIM_WRITE_LIMIT_PER_MINUTE", "0")
 
 import pytest
 from fastapi.testclient import TestClient
