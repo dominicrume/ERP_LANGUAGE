@@ -44,6 +44,7 @@ h1,h2,h3,.serif{font-family:'Newsreader',serif}
 
 /* ---------- CONTROLS ---------- */
 .controls{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0 8px}
+.identity-note{font-size:.78rem;color:var(--muted);line-height:1.5;max-width:640px;margin:0 0 6px}
 select,input[type=text]{
   font-family:'Instrument Sans',sans-serif;font-size:.9rem;font-weight:500;
   padding:11px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);
@@ -135,11 +136,12 @@ footer{padding:60px 0 40px;color:var(--muted);font-size:.82rem;text-align:center
   </div>
 
   <div class="controls">
-    <input type="text" id="learnerId" placeholder="Your name" value="frank" style="min-width:140px">
+    <input type="text" id="learnerId" placeholder="Your name" value="frank" style="min-width:140px" aria-describedby="identityNote">
     <select id="templateSelect"></select>
     <select id="localeSelect"></select>
     <button class="btn btn-primary" onclick="loadScenario()">Begin scenario</button>
   </div>
+  <p class="identity-note" id="identityNote">Your progress is saved under the exact name you type, on this lab's server, and is used only to help you pick up where you left off — never for anything else, never shown to another learner. Same name, same record: use one you'll remember.</p>
 
   <div class="scenario" id="scenarioBlock">
     <div class="scenario-card">
