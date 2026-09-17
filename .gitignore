@@ -3,3 +3,4 @@ __pycache__/
 .venv/
 erpsim.db
 .pytest_cache/
+config/templates/_archive/

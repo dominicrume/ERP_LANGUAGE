@@ -102,14 +102,104 @@ select:focus,input:focus{outline:2px solid var(--teal);outline-offset:1px}
 .scorebar .stat-label{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:#A8ABA2;margin-top:2px}
 
 /* ---------- INSTRUCTOR VIEW ---------- */
-.instructor{display:none;padding:40px 0}
+.instructor{display:none;padding:36px 0}
 .instructor.show{display:block}
-.instructor h2{font-size:1.5rem;font-weight:500;margin-bottom:6px}
-.instructor .sub{color:var(--muted);font-size:.9rem;margin-bottom:22px}
-.catalog-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:30px}
+.instructor .wide{max-width:1180px;margin:0 auto;padding:0 24px}
+.instructor h2{font-size:1.6rem;font-weight:500;margin-bottom:6px;letter-spacing:-.01em}
+.instructor .sub{color:var(--muted);font-size:.9rem;margin-bottom:24px;max-width:620px;line-height:1.55}
+.section-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.section-head .count{font-size:.78rem;color:var(--muted)}
+
+.catalog-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:26px}
 .catalog-stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;text-align:center}
 .catalog-stat .n{font-family:'Newsreader',serif;font-size:1.8rem;font-weight:500;color:var(--teal-deep)}
 .catalog-stat .l{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+
+/* scenario shelf */
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-bottom:34px}
+.shelf-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:6px}
+.shelf-card .t{font-family:'Newsreader',serif;font-size:1.12rem;font-weight:500;line-height:1.25}
+.shelf-card .i{font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);font-weight:700}
+.shelf-card .m{font-size:.8rem;color:var(--muted)}
+.shelf-card .row{margin-top:8px;display:flex;gap:8px}
+.shelf-new{border:1px dashed rgba(18,21,26,.25);background:none;border-radius:12px;padding:18px;cursor:pointer;text-align:left;font:inherit;color:var(--teal-deep);display:flex;flex-direction:column;justify-content:center;gap:4px;min-height:118px}
+.shelf-new:hover{border-color:var(--teal);background:rgba(47,93,80,.04)}
+.shelf-new b{font-family:'Newsreader',serif;font-size:1.12rem;font-weight:500}
+.shelf-new span{font-size:.8rem;color:var(--muted)}
+
+/* builder layout */
+.builder{display:none;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+.builder.show{display:grid}
+@media(max-width:900px){.builder.show{grid-template-columns:minmax(0,1fr)}}
+.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px}
+.panel > h3{font-family:'Newsreader',serif;font-size:1.2rem;font-weight:500;margin-bottom:3px}
+.panel > .hint{font-size:.8rem;color:var(--muted);margin-bottom:16px;line-height:1.5}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.8rem;font-weight:600;margin-bottom:6px}
+.field .help{font-size:.75rem;color:var(--muted);font-weight:400;margin-left:6px}
+.field input[type=text],.field input[type=number],.field textarea,.field select{
+  width:100%;font-family:'Instrument Sans',sans-serif;font-size:.88rem;padding:10px 13px;
+  border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);cursor:text}
+.field select{cursor:pointer}
+.field textarea{min-height:92px;resize:vertical;line-height:1.55;font-family:'Newsreader',serif;font-size:1rem}
+.inline{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.inline .field{flex:1;min-width:120px;margin-bottom:0}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--paper-dim);border-radius:999px;padding:6px 8px 6px 13px;font-size:.82rem}
+.chip button{border:none;background:none;cursor:pointer;color:var(--muted);font-size:1rem;line-height:1;padding:0 2px}
+.chip button:hover{color:#A44A1E}
+.tokens{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.opt-card .tokens{display:none}
+.opt-card .field:focus-within .tokens{display:flex}
+.token{font-family:'Instrument Sans',sans-serif;font-size:.72rem;font-weight:600;padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:var(--paper-dim);cursor:pointer;color:var(--teal-deep)}
+.token:hover{border-color:var(--teal);background:#fff}
+.sub-card{border:1px solid var(--line);border-radius:11px;padding:16px;margin-bottom:12px;background:var(--paper)}
+.sub-card .bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.sub-card .bar .n{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.opt-card{border-left:3px solid var(--teal);padding-left:13px;margin:12px 0}
+.btn-sm{font-family:'Instrument Sans',sans-serif;font-size:.78rem;font-weight:600;padding:7px 13px;border-radius:7px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--ink)}
+.btn-sm:hover{border-color:var(--ink)}
+.btn-sm.danger{color:#A44A1E;border-color:rgba(164,74,30,.3)}
+.btn-sm.danger:hover{background:#FBEAE3}
+.kpi-row{display:flex;gap:10px;align-items:center;margin-bottom:9px}
+.kpi-row input[type=text]{flex:1}
+.kpi-row input[type=number]{width:84px}
+.kpi-total{font-size:.82rem;font-weight:600;margin-top:10px}
+.kpi-total.ok{color:var(--teal-deep)}
+.kpi-total.bad{color:#A44A1E}
+
+/* preview */
+.preview-col{position:sticky;top:78px}
+@media(max-width:900px){.preview-col{position:static}}
+.thesis{border-radius:11px;padding:13px 16px;font-size:.84rem;line-height:1.5;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start}
+.thesis.good{background:#E8F3EE;color:var(--teal-deep)}
+.thesis.warn{background:#FFF4E5;color:#7A4A12}
+.thesis b{font-weight:700}
+.loc-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.loc-tab{font-family:'Instrument Sans',sans-serif;font-size:.78rem;font-weight:600;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--muted)}
+.loc-tab.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.pv-narrative{font-family:'Newsreader',serif;font-size:1.05rem;line-height:1.6;color:#2A2E35;margin-bottom:16px}
+.pv-facts{display:flex;gap:16px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 0;margin-bottom:16px}
+.pv-facts b{color:var(--ink);font-weight:600}
+.pv-decision{margin-bottom:16px}
+.pv-decision .q{font-weight:600;font-size:.88rem;margin-bottom:9px}
+.pv-opt{display:flex;gap:12px;align-items:baseline;padding:9px 0;border-top:1px dashed var(--line)}
+.pv-opt .d{font-family:'Newsreader',serif;font-size:1rem;font-weight:500;min-width:62px;flex:none}
+.pv-opt .d.pos{color:var(--teal-deep)}
+.pv-opt .d.neg{color:#A44A1E}
+.pv-opt .why{font-size:.81rem;color:var(--muted);line-height:1.45}
+.pv-opt .why b{color:var(--ink);font-weight:600;display:block;margin-bottom:2px;font-size:.84rem}
+.pv-empty{color:var(--muted);font-size:.86rem;line-height:1.6;padding:26px 0;text-align:center}
+.pv-error{background:#FBEAE3;color:#A44A1E;border-radius:10px;padding:14px 16px;font-size:.86rem;line-height:1.5}
+.publish-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.publish-note{font-size:.78rem;color:var(--muted);flex:1;min-width:180px;line-height:1.45}
+.banner{border-radius:10px;padding:13px 16px;font-size:.86rem;line-height:1.5;margin-bottom:16px;display:none}
+.banner.show{display:block}
+.banner.ok{background:#E8F3EE;color:var(--teal-deep)}
+.banner.err{background:#FBEAE3;color:#A44A1E}
+.yaml-toggle{margin-top:14px;font-size:.78rem;color:var(--muted)}
+.yaml-toggle summary{cursor:pointer;font-weight:600}
+.yaml-toggle pre{margin-top:9px;background:var(--paper-dim);border-radius:9px;padding:14px;overflow:auto;font-family:ui-monospace,monospace;font-size:.74rem;line-height:1.5;max-height:260px}
 textarea{width:100%;font-family:'ui-monospace',monospace;font-size:.82rem;padding:16px;border:1px solid var(--line);border-radius:10px;min-height:180px;resize:vertical}
 .validate-result{margin-top:12px;font-size:.86rem;padding:12px 16px;border-radius:8px;display:none}
 .validate-result.ok{display:block;background:#E8F3EE;color:var(--teal-deep)}
@@ -169,30 +259,100 @@ footer{padding:60px 0 40px;color:var(--muted);font-size:.82rem;text-align:center
 </div>
 
 <!-- ============ INSTRUCTOR VIEW ============ -->
-<div id="instructorView" class="instructor wrap">
-  <h2>Instructor</h2>
-  <p class="sub">One template file × one locale file = a new scenario for every learner, with zero engineering. Author a template below to check it's valid before publishing.</p>
+<div id="instructorView" class="instructor">
+ <div class="wide">
 
-  <div class="catalog-grid" id="catalogGrid"></div>
-
-  <label style="font-weight:600;font-size:.9rem;display:block;margin-bottom:8px">Validate a new template (YAML)</label>
-  <textarea id="templateYaml" placeholder="id: my_scenario
-industry: retail
-title: My New Scenario
-narrative: &quot;Describe the situation involving {{product}}.&quot;
-product_pool: [&quot;widgets&quot;]
-decisions:
-  - id: choice_a
-    label: &quot;What do you do?&quot;
-    options: [&quot;option_1&quot;, &quot;option_2&quot;]
-    scoring:
-      option_1: { points: 5, reason: &quot;Why this earns {points:+d} pts.&quot; }
-      option_2: { points: -10, multiply_by: freight_expedite_multiplier, reason: &quot;Costs {freight_expedite_multiplier}x more in {locale}: {points:.1f} pts.&quot; }
-kpi_weights: { cash_position: 1.0 }"></textarea>
-  <div style="margin-top:12px">
-    <button class="btn btn-primary" onclick="validateTemplate()">Validate template</button>
+  <!-- ---- shelf: what exists today ---- -->
+  <div id="shelfPane">
+    <h2>Your scenarios</h2>
+    <p class="sub">Every scenario you write here runs in all <span id="localeCount">4</span> countries automatically, with the local tax, freight and payment rules applied to the score. You write the story once.</p>
+    <div class="catalog-grid" id="catalogGrid"></div>
+    <div class="section-head"><h2 style="font-size:1.2rem">Published</h2><span class="count" id="shelfCount"></span></div>
+    <div class="shelf" id="shelf"></div>
   </div>
-  <div class="validate-result" id="validateResult"></div>
+
+  <!-- ---- builder ---- -->
+  <div id="builderPane" style="display:none">
+    <div class="section-head">
+      <h2 id="builderHeading">New scenario</h2>
+      <button class="btn-sm" onclick="closeBuilder()">&larr; Back to your scenarios</button>
+    </div>
+    <p class="sub">Write it as a story, set what each choice costs, and watch the panel on the right show how it plays out in every country before you publish.</p>
+    <div class="banner" id="builderBanner"></div>
+
+    <div class="builder show" id="builderGrid">
+
+      <!-- ---------- left: the form ---------- -->
+      <div>
+        <div class="panel">
+          <h3>The situation</h3>
+          <p class="hint">A scenario reads like a short story. Set the scene, then let the learner decide what to do about it.</p>
+          <div class="field">
+            <label for="fTitle">Title</label>
+            <input type="text" id="fTitle" placeholder="Supplier Price Shock" oninput="onEdit()">
+          </div>
+          <div class="field">
+            <label for="fIndustry">Industry <span class="help">who this is for</span></label>
+            <input type="text" id="fIndustry" placeholder="retail grocery" oninput="onEdit()">
+          </div>
+          <div class="field">
+            <label for="fNarrative">The story <span class="help">2-3 sentences</span></label>
+            <textarea id="fNarrative" placeholder="Your main supplier of [the product] has raised prices 30% overnight. You have two weeks of stock left." oninput="onEdit()"></textarea>
+            <div class="tokens">
+              <button class="token" type="button" onclick="insertProduct()">+ Insert product</button>
+              <span style="font-size:.75rem;color:var(--muted);align-self:center">puts a different product in each time a learner plays</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="fProduct">Products this could be about <span class="help">at least one</span></label>
+            <div class="inline">
+              <div class="field"><input type="text" id="fProduct" placeholder="coffee beans" onkeydown="if(event.key==='Enter'){event.preventDefault();addProduct()}"></div>
+              <button class="btn-sm" type="button" onclick="addProduct()">Add</button>
+            </div>
+            <div class="chips" id="productChips"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>The decisions</h3>
+          <p class="hint">Each decision becomes a card the learner turns over. The reason you write is what they read when it flips, so write it the way you would say it out loud.</p>
+          <div id="decisionList"></div>
+          <button class="btn-sm" type="button" onclick="addDecision()">+ Add a decision</button>
+        </div>
+
+        <div class="panel">
+          <h3>What it measures</h3>
+          <p class="hint">The KPIs this scenario is really about. They must add up to 100%.</p>
+          <div id="kpiList"></div>
+          <button class="btn-sm" type="button" onclick="addKpi()">+ Add a KPI</button>
+          <div class="kpi-total" id="kpiTotal"></div>
+        </div>
+      </div>
+
+      <!-- ---------- right: the preview ---------- -->
+      <div class="preview-col">
+        <div class="panel">
+          <h3>How it plays, country by country</h3>
+          <p class="hint">This is exactly what a learner sees — same story, local rules.</p>
+          <div id="thesisStrip"></div>
+          <div class="loc-tabs" id="locTabs"></div>
+          <div id="previewBody"><div class="pv-empty">Start with a title and a story.<br>The preview appears as you type.</div></div>
+          <div class="publish-bar">
+            <span class="publish-note" id="publishNote">Nothing is saved until you publish.</span>
+            <button class="btn btn-primary" id="publishBtn" onclick="publishDraft(false)" disabled>Publish</button>
+          </div>
+          <details class="yaml-toggle" id="yamlToggle" style="display:none">
+            <summary>See the file this creates</summary>
+            <p style="margin-top:8px">You never need to edit this. It is here so you can see there is nothing hidden.</p>
+            <pre id="yamlOut"></pre>
+          </details>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+ </div>
 </div>
 
 <footer>Built on real localization, not a translated UI. Every score carries its reason.</footer>
@@ -237,19 +397,352 @@ function setMode(mode){
   document.getElementById('instructorView').classList.toggle('show', mode==='instructor');
   document.getElementById('tabLearner').classList.toggle('active', mode==='learner');
   document.getElementById('tabInstructor').classList.toggle('active', mode==='instructor');
-  if(mode==='instructor') loadCatalog();
+  if(mode==='instructor') loadInstructor();
 }
 
-async function loadCatalog(){
+/* ================= INSTRUCTOR AUTHORING =================
+   The builder never shows YAML unless asked. It holds a draft in memory,
+   asks the API to render it in every country, and only writes a file when
+   the instructor presses Publish. No scoring happens here (ENGINEERING.md #6).
+*/
+let draft = null;          // the scenario being authored
+let editingExisting = null; // id being edited, or null for new
+let previewTimer = null;
+let previewState = {ok:false, locale:null};
+let META = {scale_options:{}, tokens:[], locales:[]};
+let lastFocusedReason = null;
+
+function blankDraft(){
+  return {id:'', title:'', industry:'', narrative:'', product_pool:[],
+          decisions:[newDecision()], kpis:[{name:'cash position', pct:100}]};
+}
+function newDecision(){
+  return {label:'', options:[newOption(), newOption()]};
+}
+function newOption(){ return {label:'', points:0, multiply_by:'', reason:''}; }
+
+async function loadInstructor(){
   try{
-    const r = await fetch(`${API}/catalog`);
+    const r = await apiFetch('/instructor/templates', {}, loadInstructor);
     const d = await r.json();
+    META = d;
+    document.getElementById('localeCount').textContent = d.locales.length;
     document.getElementById('catalogGrid').innerHTML = `
-      <div class="catalog-stat"><div class="n">${d.templates.length}</div><div class="l">Templates</div></div>
-      <div class="catalog-stat"><div class="n">${d.locales.length}</div><div class="l">Locales</div></div>
-      <div class="catalog-stat"><div class="n">${d.possible_scenarios}</div><div class="l">Possible scenarios</div></div>
-    `;
-  }catch(e){ console.error(e); }
+      <div class="catalog-stat"><div class="n">${d.templates.length}</div><div class="l">Scenarios</div></div>
+      <div class="catalog-stat"><div class="n">${d.locales.length}</div><div class="l">Countries</div></div>
+      <div class="catalog-stat"><div class="n">${d.scenarios}</div><div class="l">Playable combinations</div></div>`;
+    document.getElementById('shelfCount').textContent =
+      `${d.templates.length} scenario${d.templates.length===1?'':'s'} × ${d.locales.length} countries`;
+    document.getElementById('shelf').innerHTML =
+      d.templates.map(t=>`
+        <div class="shelf-card">
+          <div class="i">${esc(t.industry)}</div>
+          <div class="t">${esc(t.title)}</div>
+          <div class="m">${t.decisions} decision${t.decisions===1?'':'s'}, ${t.options} options, ${t.products} product${t.products===1?'':'s'}</div>
+          <div class="row"><button class="btn-sm" onclick="editTemplate('${esc(t.id)}')">Edit</button></div>
+        </div>`).join('') +
+      `<button class="shelf-new" onclick="newScenario()"><b>+ New scenario</b><span>Write a story, set the stakes, publish to every country.</span></button>`;
+  }catch(e){ /* status strip shows it */ }
+}
+
+function showShelf(){
+  document.getElementById('shelfPane').style.display = 'block';
+  document.getElementById('builderPane').style.display = 'none';
+}
+function closeBuilder(){ showShelf(); loadInstructor(); }
+
+function openBuilder(heading){
+  document.getElementById('shelfPane').style.display = 'none';
+  document.getElementById('builderPane').style.display = 'block';
+  document.getElementById('builderHeading').textContent = heading;
+  hideBanner();
+  renderForm();
+  schedulePreview(0);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function newScenario(){
+  draft = blankDraft(); editingExisting = null;
+  openBuilder('New scenario');
+}
+
+async function editTemplate(id){
+  try{
+    const r = await apiFetch(`/instructor/drafts/${encodeURIComponent(id)}`, {}, ()=>editTemplate(id));
+    if(!r.ok){ return showBanner('err', 'Could not open that scenario.'); }
+    const d = await r.json();
+    draft = {id:d.id, title:d.title, industry:d.industry, narrative:d.narrative,
+             product_pool:d.product_pool,
+             decisions:d.decisions.map(dec=>({label:dec.label, options:dec.options.map(o=>({
+               label:o.label, points:o.points, multiply_by:o.multiply_by||'', reason:o.reason}))})),
+             kpis:Object.entries(d.kpi_weights).map(([name,pct])=>({name:name.replace(/_/g,' '), pct}))};
+    editingExisting = d.id;
+    openBuilder(`Editing “${d.title}”`);
+  }catch(e){}
+}
+
+/* ---------------- form rendering ---------------- */
+function renderForm(){
+  document.getElementById('fTitle').value = draft.title;
+  document.getElementById('fIndustry').value = draft.industry;
+  document.getElementById('fNarrative').value = draft.narrative;
+  renderProducts(); renderDecisions(); renderKpis();
+}
+
+function renderProducts(){
+  document.getElementById('productChips').innerHTML = draft.product_pool.map((pr,i)=>
+    `<span class="chip">${esc(pr)}<button type="button" title="Remove" onclick="removeProduct(${i})">×</button></span>`).join('');
+}
+function addProduct(){
+  const el = document.getElementById('fProduct');
+  const v = el.value.trim();
+  if(!v) return;
+  if(!draft.product_pool.includes(v)) draft.product_pool.push(v);
+  el.value=''; renderProducts(); onEdit();
+}
+function removeProduct(i){ draft.product_pool.splice(i,1); renderProducts(); onEdit(); }
+
+function insertProduct(){
+  const ta = document.getElementById('fNarrative');
+  const at = ta.selectionStart ?? ta.value.length;
+  ta.value = ta.value.slice(0,at) + '{{product}}' + ta.value.slice(ta.selectionEnd ?? at);
+  ta.focus(); ta.selectionStart = ta.selectionEnd = at + 11;
+  onEdit();
+}
+
+function scaleOptions(sel){
+  const opts = ['<option value="">it costs the same everywhere</option>'];
+  for(const [k,label] of Object.entries(META.scale_options||{}))
+    opts.push(`<option value="${k}"${sel===k?' selected':''}>scales with ${esc(label)}</option>`);
+  return opts.join('');
+}
+
+function renderDecisions(){
+  document.getElementById('decisionList').innerHTML = draft.decisions.map((d,di)=>`
+    <div class="sub-card">
+      <div class="bar">
+        <span class="n">Decision ${di+1}</span>
+        ${draft.decisions.length>1?`<button class="btn-sm danger" type="button" onclick="removeDecision(${di})">Remove</button>`:''}
+      </div>
+      <div class="field">
+        <label>The question the learner answers</label>
+        <input type="text" value="${esc(d.label)}" placeholder="Do you absorb the increase or pass it on?"
+               oninput="draft.decisions[${di}].label=this.value; onEdit()">
+      </div>
+      ${d.options.map((o,oi)=>`
+        <div class="opt-card">
+          <div class="bar">
+            <span class="n">Option ${oi+1}</span>
+            ${d.options.length>2?`<button class="btn-sm danger" type="button" onclick="removeOption(${di},${oi})">Remove</button>`:''}
+          </div>
+          <div class="field">
+            <label>What the learner picks</label>
+            <input type="text" value="${esc(o.label)}" placeholder="Absorb it"
+                   oninput="draft.decisions[${di}].options[${oi}].label=this.value; onEdit()">
+          </div>
+          <div class="inline" style="margin-bottom:12px">
+            <div class="field" style="max-width:130px">
+              <label>Points</label>
+              <input type="number" step="1" value="${o.points}"
+                     oninput="draft.decisions[${di}].options[${oi}].points=this.value; onEdit()">
+            </div>
+            <div class="field">
+              <label>Does the local market change this?</label>
+              <select onchange="draft.decisions[${di}].options[${oi}].multiply_by=this.value; onEdit()">
+                ${scaleOptions(o.multiply_by)}
+              </select>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>Why — the learner reads this when the card flips <span class="help">click in for local values you can drop in</span></label>
+            <input type="text" id="reason-${di}-${oi}" value="${esc(o.reason)}"
+                   placeholder="Absorbing protects volume but costs margin: [points] pts."
+                   onfocus="lastFocusedReason='reason-${di}-${oi}'"
+                   oninput="draft.decisions[${di}].options[${oi}].reason=this.value; onEdit()">
+            <div class="tokens">${(META.tokens||[]).map(t=>
+              `<button class="token" type="button" onmousedown="event.preventDefault()" onclick="insertToken('reason-${di}-${oi}','${t}')">${esc(t)}</button>`).join('')}</div>
+          </div>
+        </div>`).join('')}
+      <button class="btn-sm" type="button" onclick="addOption(${di})">+ Add an option</button>
+    </div>`).join('');
+}
+function addDecision(){ draft.decisions.push(newDecision()); renderDecisions(); onEdit(); }
+function removeDecision(i){ draft.decisions.splice(i,1); renderDecisions(); onEdit(); }
+function addOption(di){ draft.decisions[di].options.push(newOption()); renderDecisions(); onEdit(); }
+function removeOption(di,oi){ draft.decisions[di].options.splice(oi,1); renderDecisions(); onEdit(); }
+
+function insertToken(fieldId, token){
+  const el = document.getElementById(fieldId);
+  if(!el) return;
+  const at = el.selectionStart ?? el.value.length;
+  const pad = (at>0 && el.value[at-1] && el.value[at-1] !== ' ') ? ' ' : '';
+  el.value = el.value.slice(0,at) + pad + token + el.value.slice(el.selectionEnd ?? at);
+  el.dispatchEvent(new Event('input'));
+  el.focus(); el.selectionStart = el.selectionEnd = at + pad.length + token.length;
+}
+
+function renderKpis(){
+  document.getElementById('kpiList').innerHTML = draft.kpis.map((k,i)=>`
+    <div class="kpi-row">
+      <input type="text" value="${esc(k.name)}" placeholder="customer satisfaction"
+             oninput="draft.kpis[${i}].name=this.value; onEdit()">
+      <input type="number" min="0" max="100" value="${k.pct}"
+             oninput="draft.kpis[${i}].pct=this.value; updateKpiTotal(); onEdit()">
+      <span style="color:var(--muted);font-size:.85rem">%</span>
+      ${draft.kpis.length>1?`<button class="btn-sm danger" type="button" onclick="removeKpi(${i})">×</button>`:''}
+    </div>`).join('');
+  updateKpiTotal();
+}
+function addKpi(){ draft.kpis.push({name:'', pct:0}); renderKpis(); onEdit(); }
+function removeKpi(i){ draft.kpis.splice(i,1); renderKpis(); onEdit(); }
+function updateKpiTotal(){
+  const total = draft.kpis.reduce((a,k)=>a+(Number(k.pct)||0),0);
+  const el = document.getElementById('kpiTotal');
+  el.className = 'kpi-total ' + (total===100?'ok':'bad');
+  el.textContent = total===100 ? 'Adds up to 100%.' : `Adds up to ${total}% — needs to be 100%.`;
+}
+
+/* ---------------- preview ---------------- */
+function draftPayload(){
+  const kpi_weights = {};
+  draft.kpis.forEach(k=>{ if(String(k.name).trim()) kpi_weights[k.name] = Number(k.pct)||0; });
+  return {
+    id: editingExisting || '',
+    title: document.getElementById('fTitle').value,
+    industry: document.getElementById('fIndustry').value,
+    narrative: document.getElementById('fNarrative').value,
+    product_pool: draft.product_pool,
+    decisions: draft.decisions.map(d=>({label:d.label, options:d.options.map(o=>({
+      label:o.label, points:Number(o.points)||0,
+      multiply_by:o.multiply_by||null, reason:o.reason}))})),
+    kpi_weights,
+  };
+}
+
+function onEdit(){
+  draft.title = document.getElementById('fTitle').value;
+  draft.industry = document.getElementById('fIndustry').value;
+  draft.narrative = document.getElementById('fNarrative').value;
+  schedulePreview(450);
+}
+function schedulePreview(delay){
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(refreshPreview, delay);
+}
+
+async function refreshPreview(){
+  const body = document.getElementById('previewBody');
+  try{
+    const r = await apiFetch('/instructor/drafts/preview',
+      {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(draftPayload())},
+      refreshPreview);
+    if(r.status === 422){
+      previewState.ok = false;
+      setPublish(false, 'Fix the note above to publish.');
+      document.getElementById('thesisStrip').innerHTML = '';
+      document.getElementById('locTabs').innerHTML = '';
+      document.getElementById('yamlToggle').style.display = 'none';
+      body.innerHTML = `<div class="pv-error">${esc((await r.json()).detail)}</div>`;
+      return;
+    }
+    if(!r.ok) return;
+    const d = await r.json();
+    previewState.ok = true;
+    renderPreview(d);
+  }catch(e){}
+}
+
+function renderPreview(d){
+  const locs = d.preview.locales;
+  if(!previewState.locale || !locs.some(l=>l.locale_id===previewState.locale))
+    previewState.locale = locs[0].locale_id;
+
+  // Does this scenario actually behave differently per country?
+  let varying = 0, total = 0;
+  locs[0].decisions.forEach((dec,di)=>dec.options.forEach((o,oi)=>{
+    total++;
+    const deltas = new Set(locs.map(l=>l.decisions[di].options[oi].score_delta));
+    if(deltas.size > 1) varying++;
+  }));
+  const strip = document.getElementById('thesisStrip');
+  strip.innerHTML = varying
+    ? `<div class="thesis good"><span>✓</span><span><b>Genuinely localized.</b> ${varying} of ${total} option${total===1?'':'s'} score${varying===1?'s':''} differently across the ${locs.length} countries, because ${varying===1?'it uses':'they use'} the local rules.</span></div>`
+    : `<div class="thesis warn"><span>!</span><span><b>Same score everywhere.</b> This scenario will play identically in all ${locs.length} countries. Set an option to scale with a local rule if the real cost depends on where you are.</span></div>`;
+
+  document.getElementById('locTabs').innerHTML = locs.map(l=>
+    `<button class="loc-tab${l.locale_id===previewState.locale?' active':''}" onclick="pickLocale('${l.locale_id}')">${esc(l.locale)}</button>`).join('');
+
+  const l = locs.find(x=>x.locale_id===previewState.locale);
+  const r = l.locale_rules;
+  document.getElementById('previewBody').innerHTML = `
+    <div class="pv-narrative">${esc(l.narrative)}</div>
+    <div class="pv-facts">
+      <span><b>${(r.tax_rate*100).toFixed(1)}%</b> ${esc(r.tax_type)}</span>
+      <span><b>${r.freight_expedite_multiplier}x</b> expedite freight</span>
+      <span><b>${r.payment_terms_days} days</b> payment terms</span>
+      <span><b>${esc(l.currency)}</b></span>
+    </div>
+    ${l.decisions.map((dec,di)=>`
+      <div class="pv-decision">
+        <div class="q">${esc(dec.label)}</div>
+        ${dec.options.map((o,oi)=>`
+          <div class="pv-opt">
+            <span class="d ${o.score_delta>0?'pos':(o.score_delta<0?'neg':'')}">${o.score_delta>0?'+':''}${o.score_delta}</span>
+            <span class="why"><b>${esc(optionLabel(di,oi) || o.choice.replace(/_/g,' '))}</b>${esc(o.justification[0])}</span>
+          </div>`).join('')}
+      </div>`).join('')}`;
+
+  document.getElementById('yamlOut').textContent = d.yaml;
+  document.getElementById('yamlToggle').style.display = 'block';
+  const replacing = d.exists;
+  setPublish(true, replacing
+    ? `Publishing replaces “${d.template_id}”. The version you are replacing is kept.`
+    : `Publishing adds this to all ${locs.length} countries at once.`);
+}
+
+function optionLabel(di, oi){
+  try{ return (draft.decisions[di].options[oi].label || '').trim(); }catch(e){ return ''; }
+}
+
+function pickLocale(id){ previewState.locale = id; schedulePreview(0); }
+
+function setPublish(enabled, note){
+  const b = document.getElementById('publishBtn');
+  b.disabled = !enabled;
+  b.style.opacity = enabled ? '1' : '.45';
+  b.style.cursor = enabled ? 'pointer' : 'not-allowed';
+  document.getElementById('publishNote').textContent = note;
+}
+
+function showBanner(kind, html){
+  const b = document.getElementById('builderBanner');
+  b.className = 'banner show ' + kind; b.innerHTML = html;
+}
+function hideBanner(){ document.getElementById('builderBanner').className = 'banner'; }
+
+async function publishDraft(overwrite){
+  const btn = document.getElementById('publishBtn');
+  btn.disabled = true; btn.textContent = 'Publishing…';
+  try{
+    const r = await apiFetch(`/instructor/drafts/publish?overwrite=${overwrite?'true':'false'}`,
+      {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(draftPayload())},
+      ()=>publishDraft(overwrite));
+    const d = await r.json();
+    if(r.status === 409){
+      showBanner('err', `${esc(d.detail)} <button class="btn-sm" style="margin-left:8px" onclick="publishDraft(true)">Replace it</button>`);
+      return;
+    }
+    if(!r.ok){ showBanner('err', esc(d.detail || 'Could not publish.')); return; }
+    showBanner('ok', `<b>Published.</b> “${esc(document.getElementById('fTitle').value)}” is live in ${d.locales.length} countries — learners can play it now.` +
+                     (d.overwrote ? ' The previous version was archived.' : ''));
+    editingExisting = d.published;
+    await populateSelectors();
+    schedulePreview(0);
+  }catch(e){
+    showBanner('err', 'Could not reach the API. Nothing was published.');
+  }finally{
+    btn.textContent = 'Publish';
+  }
 }
 
 async function populateSelectors(){
@@ -370,26 +863,6 @@ async function refreshScorebar(learnerId, templateId, locale){
     document.getElementById('statBest').textContent = d.best_score ?? '—';
     document.getElementById('statAttempts').textContent = d.attempts ?? 0;
   }catch(e){}
-}
-
-async function validateTemplate(){
-  const raw = document.getElementById('templateYaml').value;
-  const box = document.getElementById('validateResult');
-  try{
-    const body = new URLSearchParams({raw_yaml: raw});
-    const r = await apiFetch('/instructor/templates/validate', {method:'POST', body}, validateTemplate);
-    const d = await r.json();
-    if(r.ok){
-      box.className = 'validate-result ok';
-      box.textContent = `Valid — template "${d.template_id}" is ready to publish.`;
-    } else {
-      box.className = 'validate-result err';
-      box.textContent = d.detail || 'Invalid template.';
-    }
-  }catch(e){
-    box.className = 'validate-result err';
-    box.textContent = 'Could not reach the API.';
-  }
 }
 
 populateSelectors().then(checkMemory);

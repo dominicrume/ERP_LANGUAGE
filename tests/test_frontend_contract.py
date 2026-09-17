@@ -17,12 +17,19 @@ def test_running_score_comes_from_the_api_response():
 
 
 def test_frontend_never_reimplements_scoring_or_localization():
-    # No tax rates, multipliers or point values are computed client-side.
-    # (Rendering a rate as a percentage, tax_rate*100, is display, not logic.)
+    """ENGINEERING.md #6: one brain, one place. The builder may carry the
+    instructor's authored points to the API, but no score may be COMPUTED
+    here — points are never combined with a locale rule client-side.
+    (Rendering a rate as a percentage, tax_rate*100, is display, not logic.)"""
     script = HTML.split("<script>")[1]
     arithmetic = re.sub(r"tax_rate\s*\*\s*100", "", script)
-    assert not re.search(r"\b(tax_rate|freight_expedite_multiplier|score_delta|running_score)\s*[*+\-/]", arithmetic)
-    assert "points" not in re.sub(r"<textarea.*?</textarea>", "", HTML, flags=re.S).split("<script>")[1]
+    assert not re.search(r"\b(tax_rate|freight_expedite_multiplier|payment_terms_days|score_delta|running_score)\s*[*+\-/]",
+                         arithmetic)
+    # points never multiplied by anything, and never combined with a locale rule
+    assert not re.search(r"\bpoints\b\s*[*/]", arithmetic)
+    assert not re.search(r"[*/]\s*\w*\.?\bpoints\b", arithmetic)
+    for rule in ("freight_expedite_multiplier", "payment_terms_days", "tax_rate"):
+        assert not re.search(rf"points[^;\n]*{rule}|{rule}[^;\n]*points", arithmetic)
 
 
 def test_frontend_scores_with_locale_id():
