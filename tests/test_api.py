@@ -74,3 +74,17 @@ def test_every_generated_scenario_can_be_scored_back_through_the_api(client):
             assert r.status_code == 200, (t, l, r.text)
     p = client.get("/learners/roundtrip/progress/heatwave_demand").json()
     assert {r["locale"] for r in p["by_locale"]} == set(catalog["locales"])
+
+
+def test_negative_decision_records_last_mistake(client):
+    """Fix 4: PRODUCT.md #4 — 'here's what tripped you up last time' must
+    be real, citing the locale rule that produced the penalty."""
+    _score(client, choice="expedite", learner_id="frank")
+    p = client.get("/learners/frank/progress/heatwave_demand", params={"locale": "uk"}).json()
+    assert p["last_mistake"] and "1.6x" in p["last_mistake"]
+
+
+def test_positive_decision_does_not_write_a_mistake(client):
+    _score(client, decision_id="customer_allocation", choice="highest_value_first", learner_id="frank")
+    p = client.get("/learners/frank/progress/heatwave_demand", params={"locale": "uk"}).json()
+    assert p["attempts"] == 1 and p["last_mistake"] is None

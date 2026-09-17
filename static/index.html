@@ -233,7 +233,8 @@ async function checkMemory(){
     const d = await r.json();
     const strip = document.getElementById('memoryStrip');
     if(d.attempts > 0){
-      document.getElementById('memoryText').innerHTML = `Welcome back, <b>${esc(learnerId)}</b> — you've tried this in <b>${locale.toUpperCase()}</b> ${d.attempts} time${d.attempts>1?'s':''}. Best score: <b>${d.best_score}</b>.`;
+      const mistake = d.last_mistake ? ` Last time this tripped you up: <i>${esc(d.last_mistake)}</i>` : '';
+      document.getElementById('memoryText').innerHTML = `Welcome back, <b>${esc(learnerId)}</b> — you've tried this in <b>${locale.toUpperCase()}</b> ${d.attempts} time${d.attempts>1?'s':''}. Best score: <b>${d.best_score}</b>.${mistake}`;
       strip.classList.add('show');
     } else {
       strip.classList.remove('show');

@@ -67,8 +67,10 @@ def score(template_id: str = Form(...), locale: str = Form(...), seed: int = For
     except scoring.ScoringError as e:
         raise HTTPException(422, str(e))
     if learner_id:
+        # PRODUCT.md #4: remember what tripped the learner up, in the rule's own words.
+        mistake = result["justification"][0] if result["score_delta"] < 0 else None
         with Session(engine) as s:
-            memory.record_attempt(s, learner_id, template_id, locale, result["running_score"])
+            memory.record_attempt(s, learner_id, template_id, locale, result["running_score"], mistake)
     return result
 
 

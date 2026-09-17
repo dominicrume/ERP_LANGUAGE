@@ -45,3 +45,10 @@ def test_locales_never_merge(session):
 def test_locale_key_is_case_insensitive(session):
     memory.record_attempt(session, "frank", "heatwave_demand", "UK", 50.0)
     assert memory.recall(session, "frank", "heatwave_demand", "uk").attempts == 1
+
+
+def test_last_mistake_is_kept_until_a_new_one(session):
+    """Fix 4: a mistake persists across a later clean attempt."""
+    memory.record_attempt(session, "frank", "heatwave_demand", "uk", 68.0, "Expedite cost you 32 pts.")
+    memory.record_attempt(session, "frank", "heatwave_demand", "uk", 100.0)
+    assert memory.recall(session, "frank", "heatwave_demand", "uk").last_mistake == "Expedite cost you 32 pts."
