@@ -19,9 +19,13 @@ def database_url() -> str:
     return os.environ.get("ERPSIM_DATABASE_URL", DEFAULT_DATABASE_URL)
 
 
+def engine_kwargs(url: str) -> dict:
+    """SQLite needs check_same_thread=False under uvicorn; nothing else does."""
+    return {"connect_args": {"check_same_thread": False}} if url.startswith("sqlite") else {}
+
+
 def make_engine(url: str):
-    kwargs = {"connect_args": {"check_same_thread": False}} if url.startswith("sqlite") else {}
-    return create_engine(url, **kwargs)
+    return create_engine(url, **engine_kwargs(url))
 
 
 engine = make_engine(database_url())

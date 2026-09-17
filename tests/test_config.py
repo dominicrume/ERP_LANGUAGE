@@ -16,5 +16,6 @@ def test_dsn_comes_from_environment(monkeypatch, tmp_path):
 
 
 def test_non_sqlite_dsn_gets_no_sqlite_connect_args():
-    eng = main.make_engine("postgresql+psycopg2://u:p@localhost/erpsim")
-    assert eng.url.drivername.startswith("postgresql")
+    """No driver needed: only the kwargs decision is under test."""
+    assert main.engine_kwargs("postgresql+psycopg2://u:p@localhost/erpsim") == {}
+    assert main.engine_kwargs("sqlite:///x.db") == {"connect_args": {"check_same_thread": False}}
