@@ -151,3 +151,31 @@ def test_a_published_scenario_reopens_in_the_builder_in_plain_language(instructo
     assert page.input_value("#fTitle") == "Port Strike Delay"
     reason = page.locator("input[id^=reason]").first.input_value()
     assert "[country]" in reason and "{" not in reason
+
+
+def test_authored_text_can_never_run_as_script_in_a_learners_browser(instructor_page):
+    """BREAK.md Thief hat. Publishing is open (DEBT.md), so every authored
+    string reaching the learner view is untrusted. A decision label or option
+    carrying markup must render as text and never execute."""
+    page, _ = instructor_page
+    payload = '<img src=x onerror="window.__xss=(window.__xss||0)+1">'
+    draft = {
+        "title": "Injection Probe", "industry": "security",
+        "narrative": "A probe about {{product}}.", "product_pool": ["widgets"],
+        "decisions": [{"label": "Pick one " + payload, "options": [
+            {"label": "first", "points": 1, "reason": "Reason with " + payload + " [points]."},
+            {"label": "second", "points": -1, "reason": "Other reason [points]."}]}],
+        "kpi_weights": {"margin": 100},
+    }
+    r = page.request.post(f"http://127.0.0.1:{PORT}/instructor/drafts/publish", data=draft)
+    assert r.ok, r.text()
+    page.reload(wait_until="networkidle")
+    page.click("#tabLearner")
+    page.select_option("#templateSelect", "injection_probe")
+    page.click("button:has-text('Begin scenario')")
+    page.wait_for_selector(".scenario.show .opt", timeout=8000)
+    page.locator(".opt").first.click()
+    page.wait_for_selector(".card-inner.flipped", timeout=8000)
+    page.wait_for_timeout(400)
+    assert page.evaluate("window.__xss") is None, "authored markup executed as script"
+    assert "<img" in page.locator(".decision-label").first.inner_text()

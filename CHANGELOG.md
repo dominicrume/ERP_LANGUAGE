@@ -41,3 +41,27 @@
   and re-edit a scenario through the UI alone (BREAK.md hat 2, answered).
   DEBT.md: instructor-authoring row repaid and removed; two new rows
   logged (unauthenticated publishing, no locale authoring surface).
+- 2026-09-17 v0.4.1 - Frontend redesign and security fix, audited in a real
+  browser before and after (taste-skill + ui-ux-pro-max). Security: authored
+  decision labels and reasons were inserted into the learner view as raw
+  HTML, and publishing is open, so any published scenario could run script
+  in every learner's browser (proven: the probe executed twice). All
+  authored text is now escaped and option ids travel in data attributes,
+  never in inline handlers. Bugs: the flipped card clipped its reason on
+  desktop and spilled over the next decision on mobile; keyboard focus
+  stayed on the hidden front face, whose buttons could still be pressed to
+  re-score; Publish stayed disabled after an error; a slow preview could
+  overwrite a newer one; switching preview country re-fetched data the page
+  already had. UI: design tokens with full dark mode, one accent, one gray
+  family, one radius system; real labels on every control; header, main,
+  nav landmarks and a skip link; visible focus rings; 44px targets on touch
+  devices; skeleton loading, an empty state, and inline icons from
+  Phosphor; zero em or en dashes in visible copy; the catalogue shown as
+  "scenarios x countries = playable combinations". Honesty: the score bar
+  no longer says "Running score" or "Attempts", because the API scores
+  each decision on its own (CONTEXT.md gap A remains open until runs exist).
+  Tests 110 -> 123. Measured: 0 contrast failures and 0 horizontal scroll
+  in light and dark at 1280px and 375px. Pushed to
+  github.com/dominicrume/ERP_LANGUAGE, merged with its starter commit, no
+  force push.
+

@@ -5,8 +5,8 @@ CLAUDE.md routes an agent to a workspace; this file says what the product
 is, what is actually true today, and what is left. Stage files own their
 own contracts — this file never restates them, it points at them.
 
-Scored 2026-09-17 against v0.4.0 (commit `4e09b5f`). Every claim below was
-run, not read. The command that proves each one is named beside it.
+Scored 2026-09-17 against v0.4.1 (GitHub: dominicrume/ERP_LANGUAGE). Every
+claim below was run, not read. The command that proves each one is named beside it.
 
 ---
 
@@ -51,7 +51,7 @@ behave differently in four countries on demand.
 | Scoring | `scoring.py` | Interpreter over template data. **Per-decision only** |
 | Learner memory | `memory.py` | SQLModel, keyed learner × template × locale |
 | Authoring | `authoring.py` | Draft → validate → preview → publish |
-| Frontend | `static/index.html` (874 lines, single file) | Learner view + instructor builder |
+| Frontend | `static/index.html` (single file, tokens, light + dark) | Learner view + instructor builder |
 | Database | SQLite via `ERPSIM_DATABASE_URL` | **No migration tooling** |
 | Gate | `scripts/check.sh` / `make check` | pytest + ROOTS, non-zero on failure |
 
@@ -74,8 +74,10 @@ Content that grows without code: `config/locales/*.yaml` (4 countries),
 | 8 | Instructor authors and publishes without seeing YAML | `pytest tests/test_builder_browser.py` (needs `.[ui]`) |
 | 9 | Frontend computes no score or locale logic | `pytest tests/test_frontend_contract.py` |
 | 10 | DSN is runtime config, SQLite → Postgres by swap | `pytest tests/test_config.py` |
+| 11 | Authored text can never run as script for a learner | `tests/test_builder_browser.py::test_authored_text_can_never_run_as_script_in_a_learners_browser` |
+| 12 | Contrast, layout, focus and touch targets hold in light and dark, desktop and phone | `pytest tests/test_ui_quality_browser.py` |
 
-110 tests. `make check` is green.
+123 tests. `make check` is green.
 
 ---
 
@@ -86,7 +88,8 @@ These are not opinions. The probe output is in the session that wrote this file.
 **A. "Running score" does not run. — P0, the product lies on screen.**
 Each decision is scored independently as `100 + points`. Score decision one
 (+8) and the API says 108. Score decision two (−32) and it says 68, not 76.
-The score bar in `static/index.html` labels this "Running score". A learner
+Until v0.4.1 the score bar labelled this "Running score"; it now honestly
+says "Latest decision score", but the model underneath is still per-decision. A learner
 who makes two decisions is shown a number that silently discards the first.
 `src/erpsim/scoring.py` line ~44 returns `base = 100.0 + points`.
 
@@ -94,8 +97,9 @@ who makes two decisions is shown a number that silently discards the first.
 One learner, one scenario, two decisions, and the record says `attempts=2`,
 `best_score=108.0`. `best_score` is therefore the best *single decision*
 ever made, not the best run — and it can exceed 100, which is meaningless
-to a learner. The welcome strip says "you've tried this 2 times" after one
-sitting.
+to a learner. Since v0.4.1 the welcome strip says so honestly ("you have
+made 2 decisions ... best single decision"), but there is still no record of
+a completed sitting to show.
 
 **C. `kpi_weights` is dead data. — P1, the product is hollow where it matters.**
 Every template declares what it measures and the weights are validated to
@@ -110,8 +114,7 @@ summary. A learner turns over the cards and the screen simply stops.
 Nothing tells them how they did overall or what to do next.
 
 **E. No streak. — P1, PRODUCT.md #4 names it explicitly.**
-The CSS in `static/index.html` is even labelled `SCORE / STREAK BAR`. The
-word "streak" appears nowhere else in the file. PRODUCT.md #4 requires
+Nothing in the data model or the frontend tracks one. PRODUCT.md #4 requires
 "a visible best-score, a streak, and an honest 'here's what tripped you up'".
 Two of three exist.
 

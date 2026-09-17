@@ -15,7 +15,7 @@ generate and score through the API with src/ untouched.
 ## Run it
     python3 -m venv .venv && source .venv/bin/activate
     pip install -e ".[dev]" httpx
-    make check                                # 110 tests, then the ROOTS gate
+    make check                                # 123 tests, then the ROOTS gate
     uvicorn erpsim.main:app --reload --app-dir src
     # open http://127.0.0.1:8000  <- the frontend, served automatically
 

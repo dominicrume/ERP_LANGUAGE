@@ -39,3 +39,49 @@ def test_frontend_scores_with_locale_id():
 def test_learner_data_promise_is_stated_in_product():
     """PRODUCT.md #7: in-product, not in terms."""
     assert 'id="identityNote"' in HTML and "never shown to another learner" in HTML
+
+
+# ---- UI quality contract (redesign 2026-09-17: taste-skill + ui-ux-pro-max audit) ----
+
+VISIBLE = re.sub(r"<style>.*?</style>", "", HTML, flags=re.S)
+STYLE = HTML.split("<style>")[1].split("</style>")[0]
+
+
+def test_no_em_or_en_dashes_anywhere_a_user_can_read():
+    assert not re.search("[—–]|&mdash;|&ndash;", VISIBLE)
+
+
+def test_page_has_landmarks_skip_link_and_real_labels():
+    assert "<main" in HTML and "<header" in HTML and "<nav" in HTML
+    assert 'class="skip" href="#main"' in HTML
+    for field in ("learnerId", "templateSelect", "localeSelect", "fTitle", "fIndustry", "fNarrative", "fProduct"):
+        assert f'for="{field}"' in HTML, field
+
+
+def test_dark_mode_and_reduced_motion_are_supported():
+    assert "@media (prefers-color-scheme: dark)" in STYLE
+    assert "@media (prefers-reduced-motion:reduce)" in STYLE
+    assert ":focus-visible" in STYLE
+
+
+def test_colors_come_from_tokens_only():
+    """One palette, defined once per theme. Raw hex outside the token blocks is
+    how a second accent sneaks in."""
+    token_blocks = re.findall(r":root\{.*?\n\}", STYLE, flags=re.S)
+    outside = STYLE
+    for block in token_blocks:
+        outside = outside.replace(block, "")
+    assert not re.findall(r"#[0-9A-Fa-f]{3,8}\b", outside)
+
+
+def test_authored_strings_never_reach_an_inline_handler_in_the_learner_view():
+    """Decision and option ids travel in data attributes read by a delegated
+    listener, never interpolated into onclick JavaScript."""
+    assert "onclick=\"makeDecision(" not in HTML
+    assert "data-decision=" in HTML and "data-choice=" in HTML
+
+
+def test_score_labels_do_not_claim_what_the_api_does_not_compute():
+    """CONTEXT.md gap A: the API scores each decision on its own. Until runs
+    exist (PROMPT-02 item 1) the UI must not call it a running score."""
+    assert "Running score" not in VISIBLE and "Attempts<" not in VISIBLE

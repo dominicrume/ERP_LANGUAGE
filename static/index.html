@@ -4,258 +4,394 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ERP Decision Lab</title>
+<meta name="description" content="Operational decision training for ERP work. The same scenario scores differently in each country because tax, freight and payment rules are real.">
+<meta name="theme-color" content="#F7F8F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1312" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232F5D50'/%3E%3Crect x='9' y='9' width='14' height='14' rx='3' fill='none' stroke='%23FDFDFC' stroke-width='2.5'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <style>
+/* =====================================================================
+   Design tokens. One accent (teal), one cool-neutral gray family, one
+   radius system: controls 8px, nested containers 12px, cards 16px,
+   choices / toggles / chips are pills. Light and dark share every name.
+   ===================================================================== */
 :root{
-  --ink:#12151A;
-  --paper:#FAFAF8;
-  --paper-dim:#F0EEE7;
-  --teal:#2F5D50;
-  --teal-deep:#1E4038;
-  --amber:#C6772E;
-  --line:rgba(18,21,26,.10);
-  --muted:#6B6F76;
+  color-scheme: light dark;
+  --bg:#F7F8F7; --surface:#FDFDFC; --surface-2:#EEF1EF; --surface-3:#E3E8E5;
+  --text:#14191B; --text-2:#384044; --muted:#545E64;
+  --line:rgba(20,25,27,.12); --line-strong:rgba(20,25,27,.26);
+  --accent:#2F5D50; --accent-hover:#244A40; --on-accent:#FDFDFC;
+  --accent-text:#285446; --accent-soft:#E1ECE7;
+  --danger:#973817; --danger-soft:#F7E4DC; --warn:#6F4410; --warn-soft:#F7ECD8;
+  --pos:#21604F; --neg:#973817;
+  --reveal:#1C2A27; --on-reveal:#EEF3F1; --on-reveal-2:#C3CFCA; --reveal-pos:#94DCC6; --reveal-neg:#F2B495;
+  --focus:#2F5D50;
+  --shadow:0 1px 2px rgba(28,42,39,.05),0 10px 28px -14px rgba(28,42,39,.18);
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-pill:999px;
+  --ease:cubic-bezier(.2,.7,.2,1);
+  --serif:'Newsreader',Georgia,serif; --sans:'Instrument Sans',system-ui,sans-serif;
+  --z-top:30; --z-skip:40;
 }
-*{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
-@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-body{background:var(--paper);color:var(--ink);font-family:'Instrument Sans',sans-serif;line-height:1.55;min-height:100vh}
-.wrap{max-width:760px;margin:0 auto;padding:0 24px}
-h1,h2,h3,.serif{font-family:'Newsreader',serif}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0E1312; --surface:#151B1A; --surface-2:#1B2321; --surface-3:#26302D;
+    --text:#E9EEEC; --text-2:#C6CFCB; --muted:#9DA8A4;
+    --line:rgba(233,238,236,.12); --line-strong:rgba(233,238,236,.26);
+    --accent:#7CC0AB; --accent-hover:#96D0BE; --on-accent:#0E1312;
+    --accent-text:#8FCDB9; --accent-soft:#1C332E;
+    --danger:#F2A383; --danger-soft:#3A221A; --warn:#EDC27F; --warn-soft:#332817;
+    --pos:#8FD3BE; --neg:#F2A383;
+    --reveal:#22332F; --on-reveal:#EEF3F1; --on-reveal-2:#C3CFCA;
+    --focus:#8FCDB9;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px -14px rgba(0,0,0,.6);
+  }
+}
 
-/* ---------- TOP BAR ---------- */
-.topbar{border-bottom:1px solid var(--line);padding:18px 0;position:sticky;top:0;background:rgba(250,250,248,.92);backdrop-filter:blur(6px);z-index:30}
-.topbar .wrap{display:flex;align-items:center;justify-content:space-between}
-.brand{font-family:'Newsreader',serif;font-weight:500;font-size:1.15rem;letter-spacing:-.01em}
-.brand em{font-style:normal;color:var(--teal)}
-.mode-toggle{display:flex;gap:2px;background:var(--paper-dim);border-radius:999px;padding:3px}
-.mode-toggle button{font-family:'Instrument Sans',sans-serif;font-size:.78rem;font-weight:600;border:none;background:none;padding:7px 16px;border-radius:999px;cursor:pointer;color:var(--muted)}
-.mode-toggle button.active{background:var(--ink);color:var(--paper)}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.55;min-height:100dvh}
+h1,h2,h3{font-family:var(--serif);font-weight:500;letter-spacing:-.015em;text-wrap:balance}
+p{text-wrap:pretty}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+::selection{background:var(--accent-soft)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+input:focus,select:focus,textarea:focus{outline:3px solid var(--focus);outline-offset:1px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.num{font-variant-numeric:tabular-nums}
+.ph{font-size:1.15em;line-height:1;vertical-align:-.15em}
 
-/* ---------- WELCOME / MEMORY STRIP ---------- */
-.welcome{padding:40px 0 8px}
-.welcome .greeting{font-size:.85rem;color:var(--muted);margin-bottom:6px}
-.welcome h1{font-size:clamp(1.9rem,5vw,2.6rem);font-weight:500;letter-spacing:-.01em;line-height:1.15;margin-bottom:14px}
-.memory-strip{display:none;align-items:center;gap:10px;background:var(--paper-dim);border-radius:10px;padding:12px 16px;font-size:.86rem;color:var(--ink);margin-bottom:8px}
-.memory-strip.show{display:flex}
-.memory-strip .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);flex:none}
-.memory-strip b{color:var(--teal-deep)}
+.skip{position:absolute;left:16px;top:-60px;z-index:var(--z-skip);background:var(--accent);color:var(--on-accent);padding:10px 16px;border-radius:var(--r-sm);font-weight:600;text-decoration:none;transition:top .2s var(--ease)}
+.skip:focus{top:12px}
 
-/* ---------- CONTROLS ---------- */
-.controls{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0 8px}
-.identity-note{font-size:.78rem;color:var(--muted);line-height:1.5;max-width:640px;margin:0 0 6px}
-.api-status{display:none;align-items:center;gap:10px;margin:14px 0 0;padding:12px 16px;border-radius:10px;font-size:.86rem;line-height:1.45}
+.wrap{max-width:760px;margin:0 auto;padding:0 20px}
+.wide{max-width:1180px;margin:0 auto;padding:0 20px}
+
+/* ---------- top bar ---------- */
+.topbar{position:sticky;top:0;z-index:var(--z-top);border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:saturate(140%) blur(8px);-webkit-backdrop-filter:saturate(140%) blur(8px)}
+.topbar .wide{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px}
+.brand{font-family:var(--serif);font-weight:500;font-size:1.2rem;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.brand-mark{width:22px;height:22px;border-radius:6px;background:var(--accent);display:grid;place-items:center}
+.brand-mark::after{content:"";width:9px;height:9px;border:2px solid var(--on-accent);border-radius:2px}
+.brand em{font-style:normal;color:var(--accent-text)}
+.mode-toggle{display:flex;gap:2px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-pill);padding:3px}
+.mode-toggle button{font-size:.86rem;font-weight:600;border:none;background:none;min-height:38px;padding:0 16px;border-radius:var(--r-pill);color:var(--text-2);transition:background .2s var(--ease),color .2s var(--ease)}
+.mode-toggle button:hover{color:var(--text)}
+.mode-toggle button[aria-pressed="true"]{background:var(--text);color:var(--bg)}
+.brand span:last-child{white-space:nowrap}
+/* the top bar stays on one line at phone width */
+@media (max-width:440px){
+  .wide,.wrap{padding:0 16px}
+  .topbar .wide{gap:10px}
+  .brand{font-size:1.02rem}
+  .brand-mark{display:none}
+  .mode-toggle button{font-size:.8rem;padding:0 11px}
+}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:.95rem;min-height:44px;padding:0 20px;border-radius:var(--r-sm);border:1px solid transparent;white-space:nowrap;transition:background .2s var(--ease),transform .12s var(--ease),border-color .2s var(--ease)}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn-primary{background:var(--accent);color:var(--on-accent)}
+.btn-primary:hover:not(:disabled){background:var(--accent-hover)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn[aria-busy="true"]{cursor:progress}
+.btn-sm{display:inline-flex;align-items:center;gap:6px;font-size:.84rem;font-weight:600;min-height:40px;padding:0 14px;border-radius:var(--r-sm);border:1px solid var(--line-strong);background:var(--surface);color:var(--text);transition:border-color .2s var(--ease),background .2s var(--ease),transform .12s var(--ease)}
+.btn-sm:hover{border-color:var(--text)}
+.btn-sm:active{transform:translateY(1px)}
+.btn-sm.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,transparent)}
+.btn-sm.danger:hover{background:var(--danger-soft);border-color:var(--danger)}
+.btn-sm.icon-only{padding:0;width:40px;justify-content:center}
+
+/* ---------- form controls ---------- */
+.control label,.field label{display:block;font-size:.84rem;font-weight:600;margin-bottom:6px;color:var(--text)}
+.help{font-size:.78rem;color:var(--muted);font-weight:400;margin-left:6px}
+input[type=text],input[type=number],select,textarea{width:100%;min-height:44px;font-size:.95rem;padding:10px 13px;border:1px solid var(--line-strong);border-radius:var(--r-sm);background:var(--surface);color:var(--text);transition:border-color .2s var(--ease)}
+input[type=text],input[type=number],select{height:44px}
+input::placeholder,textarea::placeholder{color:var(--muted);opacity:1}
+input:hover,select:hover,textarea:hover{border-color:var(--text-2)}
+select{cursor:pointer}
+
+/* =====================================================================
+   LEARNER VIEW
+   ===================================================================== */
+.welcome{padding:44px 0 6px}
+.greeting{font-size:.92rem;color:var(--muted);margin-bottom:6px}
+.welcome h1{font-size:clamp(2rem,5.2vw,2.75rem);line-height:1.1;margin-bottom:16px}
+.memory-strip{display:none;background:var(--accent-soft);color:var(--text);border-radius:var(--r-md);padding:14px 16px;font-size:.92rem;line-height:1.5;margin-bottom:6px}
+.memory-strip.show{display:block}
+.memory-strip b{color:var(--accent-text);font-weight:600}
+.memory-strip .tripped{display:block;margin-top:6px;color:var(--text-2)}
+
+.controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr) auto;gap:12px;align-items:end;margin:22px 0 10px}
+/* mobile: the scenario name is the longest value, so it gets the full row */
+@media (max-width:720px){
+  .controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"name country" "scenario scenario" "go go"}
+  .controls .control-name{grid-area:name}.controls .control-scenario{grid-area:scenario}.controls .control-country{grid-area:country}
+  .controls .btn{grid-area:go;width:100%}
+}
+.identity-note{font-size:.82rem;color:var(--muted);line-height:1.55;max-width:65ch;margin:0 0 6px}
+
+.api-status{display:none;align-items:center;gap:10px;margin:14px 0 0;padding:12px 14px;border-radius:var(--r-md);font-size:.9rem;line-height:1.45}
 .api-status.show{display:flex}
-.api-status.wait{background:#FFF4E5;color:#7A4A12}
-.api-status.fail{background:#FBEAE3;color:#A44A1E}
-.api-status .spin{width:10px;height:10px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;animation:spin .8s linear infinite;flex:none}
+.api-status.wait{background:var(--warn-soft);color:var(--warn)}
+.api-status.fail{background:var(--danger-soft);color:var(--danger)}
+.api-status .spin{width:12px;height:12px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;animation:spin .8s linear infinite;flex:none}
 @keyframes spin{to{transform:rotate(360deg)}}
-.api-status button{margin-left:auto;font:inherit;font-weight:600;background:none;border:1px solid currentColor;border-radius:6px;padding:5px 10px;cursor:pointer;color:inherit}
-select,input[type=text]{
-  font-family:'Instrument Sans',sans-serif;font-size:.9rem;font-weight:500;
-  padding:11px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);
-  cursor:pointer;
-}
-select:focus,input:focus{outline:2px solid var(--teal);outline-offset:1px}
-.btn{
-  font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:.9rem;
-  padding:12px 22px;border-radius:8px;border:none;cursor:pointer;transition:transform .12s ease, background .15s;
-}
-.btn:active{transform:scale(.97)}
-.btn-primary{background:var(--teal);color:#fff}
-.btn-primary:hover{background:var(--teal-deep)}
-.btn-ghost{background:none;border:1px solid var(--line);color:var(--ink)}
-.btn-ghost:hover{border-color:var(--ink)}
+.api-status button{margin-left:auto;font-weight:600;background:none;border:1px solid currentColor;border-radius:var(--r-sm);min-height:36px;padding:0 12px;color:inherit}
 
-/* ---------- SCENARIO CARD (the story) ---------- */
+/* empty state before the first scenario */
+.learner-empty{margin-top:30px;padding:28px;border:1px dashed var(--line-strong);border-radius:var(--r-lg);display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:start}
+.learner-empty .ph{font-size:1.7rem;color:var(--accent-text);margin-top:4px}
+.learner-empty h2{font-size:1.3rem;margin-bottom:6px}
+.learner-empty p{color:var(--text-2);font-size:.95rem;max-width:58ch}
+.learner-empty[hidden]{display:none}
+
+/* scenario */
 .scenario{display:none;margin-top:28px}
 .scenario.show{display:block}
-.scenario-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:34px;box-shadow:0 1px 3px rgba(18,21,26,.04)}
-.scenario-tag{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);font-weight:700;margin-bottom:10px}
-.scenario-title{font-size:1.7rem;font-weight:500;margin-bottom:14px;letter-spacing:-.01em}
-.scenario-narrative{font-family:'Newsreader',serif;font-size:1.14rem;line-height:1.65;color:#2A2E35;margin-bottom:22px}
-.locale-facts{display:flex;gap:18px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:16px;margin-bottom:22px}
-.locale-facts b{color:var(--ink);font-weight:600}
+.scenario-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(20px,4vw,36px);box-shadow:var(--shadow)}
+.scenario-tag{font-size:.88rem;color:var(--muted);margin-bottom:8px}
+.scenario-title{font-family:var(--serif);font-size:clamp(1.55rem,4vw,1.95rem);font-weight:500;line-height:1.15;letter-spacing:-.015em;margin-bottom:14px;text-wrap:balance}
+.scenario-narrative{font-family:var(--serif);font-size:1.16rem;line-height:1.65;color:var(--text-2);max-width:62ch;margin-bottom:22px}
+.locale-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;margin-bottom:26px}
+.locale-facts div{background:var(--surface-2);padding:12px 14px}
+.locale-facts dt{font-size:.78rem;color:var(--muted)}
+.locale-facts dd{font-size:1.05rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text)}
+@media (max-width:520px){.locale-facts{grid-template-columns:minmax(0,1fr)}.locale-facts div{display:flex;justify-content:space-between;align-items:baseline;gap:12px}}
 
-/* ---------- DECISION CARDS (the flip reveal — signature moment) ---------- */
-.decision{margin-top:20px}
-.decision-label{font-weight:600;font-size:.98rem;margin-bottom:12px}
-.card-flip{perspective:1200px;min-height:96px}
-.card-inner{position:relative;width:100%;min-height:96px;transition:transform .55s cubic-bezier(.4,.1,.2,1);transform-style:preserve-3d}
+/* skeleton while a scenario loads */
+.skeleton-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(20px,4vw,36px);margin-top:28px}
+.skeleton-card[hidden]{display:none}
+.sk{background:var(--surface-3);border-radius:6px;animation:pulse 1.2s ease-in-out infinite}
+.sk + .sk{margin-top:12px}
+.sk.w1{width:22%;height:14px}.sk.w2{width:58%;height:28px}.sk.w3{width:100%;height:16px}.sk.w4{width:92%;height:16px}.sk.w5{width:100%;height:56px}
+@keyframes pulse{50%{opacity:.55}}
+
+/* decision cards: faces share one grid cell, so the card is always as
+   tall as its longest face (the reason never clips or spills) */
+.decision{margin-top:22px;animation:rise .38s var(--ease) both;animation-delay:calc(var(--i,0) * 70ms)}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+.decision-label{font-weight:600;font-size:1rem;margin-bottom:10px}
+.card-flip{perspective:1400px}
+.card-inner{display:grid;transition:transform .55s var(--ease);transform-style:preserve-3d}
 .card-inner.flipped{transform:rotateX(180deg)}
-.card-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;justify-content:center}
-.card-front{background:var(--paper-dim);border:1px solid var(--line)}
-.card-back{background:var(--ink);color:var(--paper);transform:rotateX(180deg)}
+.card-face{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:var(--r-md);padding:16px 18px}
+.card-front{background:var(--surface-2);border:1px solid var(--line)}
+.card-back{background:var(--reveal);color:var(--on-reveal);transform:rotateX(180deg);outline-offset:3px}
 .options{display:flex;gap:10px;flex-wrap:wrap}
-.opt{font-family:'Instrument Sans',sans-serif;font-size:.86rem;font-weight:500;padding:9px 16px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer;transition:.15s}
-.opt:hover{border-color:var(--teal);color:var(--teal-deep)}
-.card-back .delta{font-family:'Newsreader',serif;font-size:1.6rem;font-weight:500;margin-bottom:4px}
-.card-back .delta.pos{color:#8FD9C4}
-.card-back .delta.neg{color:#E8A985}
-.card-back .justification{font-size:.86rem;color:#D8D6CE;line-height:1.5}
+.opt{font-size:.92rem;font-weight:500;min-height:44px;padding:0 18px;border-radius:var(--r-pill);border:1px solid var(--line-strong);background:var(--surface);color:var(--text);transition:border-color .2s var(--ease),background .2s var(--ease),transform .12s var(--ease)}
+.opt:hover:not(:disabled){border-color:var(--accent);color:var(--accent-text)}
+.opt:active:not(:disabled){transform:scale(.98)}
+.opt:disabled{opacity:.55;cursor:progress}
+.delta{font-family:var(--serif);font-size:1.7rem;font-weight:500;line-height:1.1;font-variant-numeric:tabular-nums}
+.delta small{font-family:var(--sans);font-size:.85rem;font-weight:500;margin-left:4px;color:var(--on-reveal-2)}
+.delta.pos{color:var(--reveal-pos)}
+.delta.neg{color:var(--reveal-neg)}
+.reason{margin-top:6px;font-size:.96rem;line-height:1.5;color:var(--on-reveal);max-width:65ch}
+.local-rule{margin-top:10px;padding-top:10px;border-top:1px solid rgba(238,243,241,.16);font-size:.84rem;line-height:1.5;color:var(--on-reveal-2);max-width:70ch}
+.local-rule b{color:var(--on-reveal);font-weight:600}
 
-/* ---------- SCORE / STREAK BAR ---------- */
-.scorebar{display:none;align-items:center;gap:22px;margin-top:26px;padding:18px 22px;background:var(--ink);color:var(--paper);border-radius:14px;flex-wrap:wrap}
-.scorebar.show{display:flex}
-.scorebar .stat{font-family:'Newsreader',serif;font-size:1.5rem;font-weight:500}
-.scorebar .stat-label{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:#A8ABA2;margin-top:2px}
+/* score summary: same palette, no dark slab */
+.scorebar{display:none;margin-top:24px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-lg);grid-template-columns:repeat(3,minmax(0,1fr))}
+.scorebar.show{display:grid}
+.scorebar > div{padding:16px 20px}
+.scorebar > div + div{border-left:1px solid var(--line)}
+.scorebar .stat{font-family:var(--serif);font-size:1.6rem;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.15}
+.scorebar .stat-label{font-size:.82rem;color:var(--muted);margin-top:2px}
+@media (max-width:520px){
+  .scorebar.show{grid-template-columns:minmax(0,1fr)}
+  .scorebar > div{display:flex;flex-direction:row-reverse;justify-content:space-between;align-items:baseline;gap:12px;padding:12px 16px}
+  .scorebar > div + div{border-left:none;border-top:1px solid var(--line)}
+  .scorebar .stat{font-size:1.3rem}.scorebar .stat-label{margin-top:0}
+}
 
-/* ---------- INSTRUCTOR VIEW ---------- */
-.instructor{display:none;padding:36px 0}
+/* =====================================================================
+   INSTRUCTOR VIEW
+   ===================================================================== */
+.instructor{display:none;padding:40px 0 20px}
 .instructor.show{display:block}
-.instructor .wide{max-width:1180px;margin:0 auto;padding:0 24px}
-.instructor h2{font-size:1.6rem;font-weight:500;margin-bottom:6px;letter-spacing:-.01em}
-.instructor .sub{color:var(--muted);font-size:.9rem;margin-bottom:24px;max-width:620px;line-height:1.55}
-.section-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.section-head .count{font-size:.78rem;color:var(--muted)}
+.instructor h2{font-size:clamp(1.6rem,3.6vw,2rem);line-height:1.15;margin-bottom:8px}
+.instructor .sub{color:var(--text-2);font-size:.98rem;margin-bottom:24px;max-width:62ch}
+.section-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+.section-head .count{font-size:.86rem;color:var(--muted)}
+.section-head h2.small{font-size:1.25rem;margin:0}
 
-.catalog-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:26px}
-.catalog-stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;text-align:center}
-.catalog-stat .n{font-family:'Newsreader',serif;font-size:1.8rem;font-weight:500;color:var(--teal-deep)}
-.catalog-stat .l{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+/* the catalogue as one sentence: N x M = playable */
+.equation{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;padding:18px 0 22px;margin-bottom:22px;border-bottom:1px solid var(--line)}
+.equation .n{font-family:var(--serif);font-size:clamp(2rem,5vw,2.6rem);font-weight:500;font-variant-numeric:tabular-nums;color:var(--text);line-height:1}
+.equation .l{font-size:.92rem;color:var(--muted)}
+.equation .op{font-size:1.3rem;color:var(--muted)}
+.equation .result .n{color:var(--accent-text)}
+.equation span.term{display:inline-flex;align-items:baseline;gap:8px}
 
-/* scenario shelf */
-.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-bottom:34px}
-.shelf-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:6px}
-.shelf-card .t{font-family:'Newsreader',serif;font-size:1.12rem;font-weight:500;line-height:1.25}
-.shelf-card .i{font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);font-weight:700}
-.shelf-card .m{font-size:.8rem;color:var(--muted)}
-.shelf-card .row{margin-top:8px;display:flex;gap:8px}
-.shelf-new{border:1px dashed rgba(18,21,26,.25);background:none;border-radius:12px;padding:18px;cursor:pointer;text-align:left;font:inherit;color:var(--teal-deep);display:flex;flex-direction:column;justify-content:center;gap:4px;min-height:118px}
-.shelf-new:hover{border-color:var(--teal);background:rgba(47,93,80,.04)}
-.shelf-new b{font-family:'Newsreader',serif;font-size:1.12rem;font-weight:500}
-.shelf-new span{font-size:.8rem;color:var(--muted)}
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:34px}
+.shelf-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;display:flex;flex-direction:column;gap:6px;min-height:170px;transition:transform .2s var(--ease),box-shadow .2s var(--ease),border-color .2s var(--ease)}
+.shelf-card:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--line-strong)}
+.shelf-card .i{font-size:.84rem;color:var(--muted);text-transform:capitalize}
+.shelf-card .t{font-family:var(--serif);font-size:1.22rem;font-weight:500;line-height:1.2;text-wrap:balance}
+.shelf-card .m{font-size:.86rem;color:var(--muted)}
+.shelf-card .row{margin-top:auto;padding-top:10px;display:flex;gap:8px}
+.shelf-new{border:1px dashed var(--line-strong);background:transparent;border-radius:var(--r-lg);padding:20px;text-align:left;color:var(--accent-text);display:flex;flex-direction:column;justify-content:center;gap:6px;min-height:170px;transition:background .2s var(--ease),border-color .2s var(--ease)}
+.shelf-new:hover{border-color:var(--accent);background:var(--accent-soft)}
+.shelf-new b{font-family:var(--serif);font-size:1.22rem;font-weight:500;display:flex;align-items:center;gap:8px}
+.shelf-new span{font-size:.88rem;color:var(--text-2)}
 
-/* builder layout */
 .builder{display:none;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
 .builder.show{display:grid}
-@media(max-width:900px){.builder.show{grid-template-columns:minmax(0,1fr)}}
-.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px}
-.panel > h3{font-family:'Newsreader',serif;font-size:1.2rem;font-weight:500;margin-bottom:3px}
-.panel > .hint{font-size:.8rem;color:var(--muted);margin-bottom:16px;line-height:1.5}
-.field{margin-bottom:14px}
-.field label{display:block;font-size:.8rem;font-weight:600;margin-bottom:6px}
-.field .help{font-size:.75rem;color:var(--muted);font-weight:400;margin-left:6px}
-.field input[type=text],.field input[type=number],.field textarea,.field select{
-  width:100%;font-family:'Instrument Sans',sans-serif;font-size:.88rem;padding:10px 13px;
-  border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);cursor:text}
-.field select{cursor:pointer}
-.field textarea{min-height:92px;resize:vertical;line-height:1.55;font-family:'Newsreader',serif;font-size:1rem}
+@media (max-width:920px){.builder.show{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(18px,3vw,24px);margin-bottom:16px}
+.panel > h3{font-size:1.25rem;margin-bottom:4px}
+.panel > .hint{font-size:.88rem;color:var(--muted);margin-bottom:18px;line-height:1.5;max-width:60ch}
+.field{margin-bottom:16px}
+.field textarea{min-height:100px;resize:vertical;line-height:1.55;font-family:var(--serif);font-size:1.05rem}
 .inline{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
 .inline .field{flex:1;min-width:120px;margin-bottom:0}
-.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
-.chip{display:inline-flex;align-items:center;gap:7px;background:var(--paper-dim);border-radius:999px;padding:6px 8px 6px 13px;font-size:.82rem}
-.chip button{border:none;background:none;cursor:pointer;color:var(--muted);font-size:1rem;line-height:1;padding:0 2px}
-.chip button:hover{color:#A44A1E}
-.tokens{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.inline .field.points{flex:0 0 120px;min-width:0}
+.inline.spaced{margin-bottom:14px}
+.field.flush{margin-bottom:0}
+.token-hint{font-size:.8rem;color:var(--muted);align-self:center}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-pill);padding:2px 2px 2px 14px;font-size:.88rem;min-height:36px}
+.chip button{display:grid;place-items:center;width:30px;height:30px;border:none;background:none;border-radius:var(--r-pill);color:var(--muted)}
+.chip button:hover{color:var(--danger);background:var(--danger-soft)}
+.tokens{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .opt-card .tokens{display:none}
 .opt-card .field:focus-within .tokens{display:flex}
-.token{font-family:'Instrument Sans',sans-serif;font-size:.72rem;font-weight:600;padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:var(--paper-dim);cursor:pointer;color:var(--teal-deep)}
-.token:hover{border-color:var(--teal);background:#fff}
-.sub-card{border:1px solid var(--line);border-radius:11px;padding:16px;margin-bottom:12px;background:var(--paper)}
-.sub-card .bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
-.sub-card .bar .n{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
-.opt-card{border-left:3px solid var(--teal);padding-left:13px;margin:12px 0}
-.btn-sm{font-family:'Instrument Sans',sans-serif;font-size:.78rem;font-weight:600;padding:7px 13px;border-radius:7px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--ink)}
-.btn-sm:hover{border-color:var(--ink)}
-.btn-sm.danger{color:#A44A1E;border-color:rgba(164,74,30,.3)}
-.btn-sm.danger:hover{background:#FBEAE3}
-.kpi-row{display:flex;gap:10px;align-items:center;margin-bottom:9px}
+.token{font-size:.8rem;font-weight:600;min-height:32px;padding:0 11px;border-radius:var(--r-pill);border:1px solid var(--line);background:var(--surface-2);color:var(--accent-text);transition:border-color .2s var(--ease),background .2s var(--ease)}
+.token:hover{border-color:var(--accent);background:var(--surface)}
+.sub-card{border:1px solid var(--line);border-radius:var(--r-md);padding:16px;margin-bottom:12px;background:var(--surface-2)}
+.sub-card .bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.sub-card .bar .n{font-size:.86rem;color:var(--muted);font-weight:600}
+.opt-card{border-left:3px solid var(--accent);padding-left:14px;margin:14px 0}
+.kpi-row{display:flex;gap:10px;align-items:center;margin-bottom:10px}
 .kpi-row input[type=text]{flex:1}
-.kpi-row input[type=number]{width:84px}
-.kpi-total{font-size:.82rem;font-weight:600;margin-top:10px}
-.kpi-total.ok{color:var(--teal-deep)}
-.kpi-total.bad{color:#A44A1E}
+.kpi-row input[type=number]{width:90px;flex:none}
+.kpi-row .pct{color:var(--muted);font-size:.9rem}
+.kpi-total{font-size:.9rem;font-weight:600;margin-top:12px;font-variant-numeric:tabular-nums}
+.kpi-total.ok{color:var(--pos)}
+.kpi-total.bad{color:var(--danger)}
 
-/* preview */
-.preview-col{position:sticky;top:78px}
-@media(max-width:900px){.preview-col{position:static}}
-.thesis{border-radius:11px;padding:13px 16px;font-size:.84rem;line-height:1.5;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start}
-.thesis.good{background:#E8F3EE;color:var(--teal-deep)}
-.thesis.warn{background:#FFF4E5;color:#7A4A12}
+.preview-col{position:sticky;top:84px}
+@media (max-width:920px){.preview-col{position:static}}
+.thesis{border-radius:var(--r-md);padding:12px 14px;font-size:.9rem;line-height:1.5;margin-bottom:14px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start}
+.thesis .ph{font-size:1.25rem;margin-top:1px}
+.thesis.good{background:var(--accent-soft);color:var(--text)}
+.thesis.good .ph,.thesis.good b{color:var(--accent-text)}
+.thesis.warn{background:var(--warn-soft);color:var(--warn)}
 .thesis b{font-weight:700}
 .loc-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.loc-tab{font-family:'Instrument Sans',sans-serif;font-size:.78rem;font-weight:600;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--muted)}
-.loc-tab.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-.pv-narrative{font-family:'Newsreader',serif;font-size:1.05rem;line-height:1.6;color:#2A2E35;margin-bottom:16px}
-.pv-facts{display:flex;gap:16px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 0;margin-bottom:16px}
-.pv-facts b{color:var(--ink);font-weight:600}
-.pv-decision{margin-bottom:16px}
-.pv-decision .q{font-weight:600;font-size:.88rem;margin-bottom:9px}
-.pv-opt{display:flex;gap:12px;align-items:baseline;padding:9px 0;border-top:1px dashed var(--line)}
-.pv-opt .d{font-family:'Newsreader',serif;font-size:1rem;font-weight:500;min-width:62px;flex:none}
-.pv-opt .d.pos{color:var(--teal-deep)}
-.pv-opt .d.neg{color:#A44A1E}
-.pv-opt .why{font-size:.81rem;color:var(--muted);line-height:1.45}
-.pv-opt .why b{color:var(--ink);font-weight:600;display:block;margin-bottom:2px;font-size:.84rem}
-.pv-empty{color:var(--muted);font-size:.86rem;line-height:1.6;padding:26px 0;text-align:center}
-.pv-error{background:#FBEAE3;color:#A44A1E;border-radius:10px;padding:14px 16px;font-size:.86rem;line-height:1.5}
-.publish-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
-.publish-note{font-size:.78rem;color:var(--muted);flex:1;min-width:180px;line-height:1.45}
-.banner{border-radius:10px;padding:13px 16px;font-size:.86rem;line-height:1.5;margin-bottom:16px;display:none}
-.banner.show{display:block}
-.banner.ok{background:#E8F3EE;color:var(--teal-deep)}
-.banner.err{background:#FBEAE3;color:#A44A1E}
-.yaml-toggle{margin-top:14px;font-size:.78rem;color:var(--muted)}
-.yaml-toggle summary{cursor:pointer;font-weight:600}
-.yaml-toggle pre{margin-top:9px;background:var(--paper-dim);border-radius:9px;padding:14px;overflow:auto;font-family:ui-monospace,monospace;font-size:.74rem;line-height:1.5;max-height:260px}
-textarea{width:100%;font-family:'ui-monospace',monospace;font-size:.82rem;padding:16px;border:1px solid var(--line);border-radius:10px;min-height:180px;resize:vertical}
-.validate-result{margin-top:12px;font-size:.86rem;padding:12px 16px;border-radius:8px;display:none}
-.validate-result.ok{display:block;background:#E8F3EE;color:var(--teal-deep)}
-.validate-result.err{display:block;background:#FBEAE3;color:#A44A1E}
+.loc-tab{font-size:.84rem;font-weight:600;min-height:38px;padding:0 15px;border-radius:var(--r-pill);border:1px solid var(--line-strong);background:var(--surface);color:var(--text-2);transition:background .2s var(--ease),color .2s var(--ease)}
+.loc-tab:hover{color:var(--text);border-color:var(--text)}
+.loc-tab[aria-pressed="true"]{background:var(--text);color:var(--bg);border-color:var(--text)}
+#previewBody{transition:opacity .2s var(--ease)}
+#previewBody[aria-busy="true"]{opacity:.55}
+.pv-narrative{font-family:var(--serif);font-size:1.08rem;line-height:1.6;color:var(--text-2);margin-bottom:14px}
+.pv-facts{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:.84rem;color:var(--muted);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:11px 0;margin-bottom:14px}
+.pv-facts b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.pv-decision{margin-bottom:14px}
+.pv-decision .q{font-weight:600;font-size:.95rem;margin-bottom:6px}
+.pv-opt{display:grid;grid-template-columns:4.2rem minmax(0,1fr);gap:12px;align-items:baseline;padding:10px 0;border-top:1px solid var(--line)}
+.pv-opt .d{font-family:var(--serif);font-size:1.1rem;font-weight:500;font-variant-numeric:tabular-nums;text-align:right}
+.pv-opt .d.pos{color:var(--pos)}
+.pv-opt .d.neg{color:var(--neg)}
+.pv-opt .why{font-size:.88rem;color:var(--muted);line-height:1.45}
+.pv-opt .why b{color:var(--text);font-weight:600;display:block;margin-bottom:2px;font-size:.92rem}
+.pv-empty{color:var(--muted);font-size:.92rem;line-height:1.6;padding:28px 8px;text-align:center}
+.pv-error{background:var(--danger-soft);color:var(--danger);border-radius:var(--r-md);padding:13px 15px;font-size:.92rem;line-height:1.5;display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px}
+.publish-bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.publish-note{font-size:.86rem;color:var(--muted);flex:1;min-width:180px;line-height:1.45}
+.banner{border-radius:var(--r-md);padding:13px 15px;font-size:.92rem;line-height:1.5;margin-bottom:16px;display:none;align-items:center;gap:10px;flex-wrap:wrap}
+.banner.show{display:flex}
+.banner.ok{background:var(--accent-soft);color:var(--text)}
+.banner.ok b{color:var(--accent-text)}
+.banner.err{background:var(--danger-soft);color:var(--danger)}
+.yaml-toggle{margin-top:14px;font-size:.86rem;color:var(--muted)}
+.yaml-toggle summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:center}
+.yaml-toggle p{margin-top:6px}
+.yaml-toggle pre{margin-top:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.78rem;line-height:1.5;max-height:280px;color:var(--text-2)}
 
-footer{padding:60px 0 40px;color:var(--muted);font-size:.82rem;text-align:center}
-.hidden{display:none}
+footer{padding:56px 20px 40px;color:var(--muted);font-size:.86rem;text-align:center}
+
+@media (pointer:coarse){.btn-sm,.loc-tab,.mode-toggle button{min-height:44px}.token{min-height:40px}.chip button{width:40px;height:40px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 
-<div class="topbar">
-  <div class="wrap">
-    <div class="brand">ERP Decision <em>Lab</em></div>
-    <div class="mode-toggle">
-      <button id="tabLearner" class="active" onclick="setMode('learner')">Learner</button>
-      <button id="tabInstructor" onclick="setMode('instructor')">Instructor</button>
-    </div>
+<header class="topbar">
+  <div class="wide">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span>ERP Decision <em>Lab</em></span></div>
+    <nav class="mode-toggle" aria-label="Choose a view">
+      <button id="tabLearner" class="active" aria-pressed="true" onclick="setMode('learner')">Learner</button>
+      <button id="tabInstructor" aria-pressed="false" onclick="setMode('instructor')">Instructor</button>
+    </nav>
   </div>
-</div>
+</header>
+
+<main id="main" tabindex="-1">
+<div id="srAnnounce" class="sr-only" role="status" aria-live="polite"></div>
 
 <!-- ============ LEARNER VIEW ============ -->
 <div id="learnerView" class="wrap">
   <div class="welcome">
-    <div class="greeting" id="greeting">Operational decision-support, localized.</div>
+    <p class="greeting" id="greeting">Operational decisions, under real local rules.</p>
     <h1 id="welcomeHeading">What's the situation today?</h1>
-    <div class="memory-strip" id="memoryStrip">
-      <span class="dot"></span>
-      <span id="memoryText"></span>
-    </div>
+    <div class="memory-strip" id="memoryStrip"><span id="memoryText"></span></div>
   </div>
 
   <div class="controls">
-    <input type="text" id="learnerId" placeholder="Your name" value="frank" style="min-width:140px" aria-describedby="identityNote">
-    <select id="templateSelect"></select>
-    <select id="localeSelect"></select>
-    <button class="btn btn-primary" onclick="loadScenario()">Begin scenario</button>
+    <div class="control control-name">
+      <label for="learnerId">Your name</label>
+      <input type="text" id="learnerId" value="frank" autocomplete="nickname" aria-describedby="identityNote">
+    </div>
+    <div class="control control-scenario">
+      <label for="templateSelect">Scenario</label>
+      <select id="templateSelect"></select>
+    </div>
+    <div class="control control-country">
+      <label for="localeSelect">Country</label>
+      <select id="localeSelect"></select>
+    </div>
+    <button class="btn btn-primary" id="beginBtn" onclick="loadScenario()">Begin scenario</button>
   </div>
-  <div class="api-status" id="apiStatus" role="status" aria-live="polite"><span class="spin" id="apiSpin"></span><span id="apiStatusText"></span></div>
-  <p class="identity-note" id="identityNote">Your progress is saved under the exact name you type, on this lab's server, and is used only to help you pick up where you left off — never for anything else, never shown to another learner. Same name, same record: use one you'll remember.</p>
+  <div class="api-status" id="apiStatus" role="status" aria-live="polite"><span class="spin" id="apiSpin" aria-hidden="true"></span><span id="apiStatusText"></span></div>
+  <p class="identity-note" id="identityNote">Your progress is saved under the exact name you type, on this lab's server. It is used only to help you pick up where you left off, never for anything else, and never shown to another learner. Same name, same record, so use one you'll remember.</p>
 
-  <div class="scenario" id="scenarioBlock">
+  <section class="learner-empty" id="learnerEmpty" aria-labelledby="emptyHeading">
+    <i class="ph ph-cards" aria-hidden="true"></i>
+    <div>
+      <h2 id="emptyHeading">Pick a situation and a country</h2>
+      <p>You will read a short story, then turn over one card per decision. Each card shows what your choice cost and the local rule behind it. Play the same story in another country and the numbers change.</p>
+    </div>
+  </section>
+
+  <div class="skeleton-card" id="scenarioSkeleton" hidden aria-hidden="true">
+    <div class="sk w1"></div>
+    <div class="sk w2"></div>
+    <div class="sk w3"></div>
+    <div class="sk w4"></div>
+    <div class="sk w5"></div>
+  </div>
+
+  <section class="scenario" id="scenarioBlock" aria-labelledby="scenarioTitle">
     <div class="scenario-card">
-      <div class="scenario-tag" id="scenarioIndustry">—</div>
-      <div class="scenario-title" id="scenarioTitle">—</div>
-      <p class="scenario-narrative" id="scenarioNarrative">—</p>
-      <div class="locale-facts" id="localeFacts"></div>
+      <p class="scenario-tag" id="scenarioIndustry"></p>
+      <h2 class="scenario-title" id="scenarioTitle"></h2>
+      <p class="scenario-narrative" id="scenarioNarrative"></p>
+      <dl class="locale-facts" id="localeFacts"></dl>
       <div id="decisionsContainer"></div>
     </div>
-  </div>
+  </section>
 
-  <div class="scorebar" id="scorebar">
-    <div><div class="stat" id="statRunning">100.0</div><div class="stat-label">Running score</div></div>
-    <div><div class="stat" id="statBest">—</div><div class="stat-label">Your best</div></div>
-    <div><div class="stat" id="statAttempts">—</div><div class="stat-label">Attempts</div></div>
-  </div>
+  <section class="scorebar" id="scorebar" aria-label="Your record for this scenario and country">
+    <div><div class="stat num" id="statRunning">100.0</div><div class="stat-label">Latest decision score</div></div>
+    <div><div class="stat num" id="statBest">None</div><div class="stat-label">Best single decision</div></div>
+    <div><div class="stat num" id="statAttempts">0</div><div class="stat-label">Decisions made here</div></div>
+  </section>
 </div>
 
 <!-- ============ INSTRUCTOR VIEW ============ -->
@@ -265,45 +401,45 @@ footer{padding:60px 0 40px;color:var(--muted);font-size:.82rem;text-align:center
   <!-- ---- shelf: what exists today ---- -->
   <div id="shelfPane">
     <h2>Your scenarios</h2>
-    <p class="sub">Every scenario you write here runs in all <span id="localeCount">4</span> countries automatically, with the local tax, freight and payment rules applied to the score. You write the story once.</p>
-    <div class="catalog-grid" id="catalogGrid"></div>
-    <div class="section-head"><h2 style="font-size:1.2rem">Published</h2><span class="count" id="shelfCount"></span></div>
+    <p class="sub">Every scenario you write here runs in all <span id="localeCount">4</span> countries, with each country's tax, freight and payment rules applied to the score. You write the story once.</p>
+    <div class="equation" id="catalogGrid" aria-live="polite"></div>
+    <div class="section-head"><h2 class="small">Published</h2><span class="count" id="shelfCount"></span></div>
     <div class="shelf" id="shelf"></div>
   </div>
 
   <!-- ---- builder ---- -->
   <div id="builderPane" style="display:none">
     <div class="section-head">
-      <h2 id="builderHeading">New scenario</h2>
-      <button class="btn-sm" onclick="closeBuilder()">&larr; Back to your scenarios</button>
+      <button class="btn-sm" onclick="closeBuilder()"><i class="ph ph-arrow-left" aria-hidden="true"></i>Back to your scenarios</button>
     </div>
-    <p class="sub">Write it as a story, set what each choice costs, and watch the panel on the right show how it plays out in every country before you publish.</p>
-    <div class="banner" id="builderBanner"></div>
+    <h2 id="builderHeading">New scenario</h2>
+    <p class="sub">Write it as a story, set what each choice costs, and check how it plays in every country before you publish.</p>
+    <div class="banner" id="builderBanner" role="status" aria-live="polite"></div>
 
     <div class="builder show" id="builderGrid">
 
       <!-- ---------- left: the form ---------- -->
       <div>
-        <div class="panel">
-          <h3>The situation</h3>
-          <p class="hint">A scenario reads like a short story. Set the scene, then let the learner decide what to do about it.</p>
+        <section class="panel" aria-labelledby="hSituation">
+          <h3 id="hSituation">The situation</h3>
+          <p class="hint">Set the scene in a few sentences, then let the learner decide what to do about it.</p>
           <div class="field">
             <label for="fTitle">Title</label>
-            <input type="text" id="fTitle" placeholder="Supplier Price Shock" oninput="onEdit()">
+            <input type="text" id="fTitle" placeholder="Supplier price shock" oninput="onEdit()">
           </div>
           <div class="field">
             <label for="fIndustry">Industry <span class="help">who this is for</span></label>
             <input type="text" id="fIndustry" placeholder="retail grocery" oninput="onEdit()">
           </div>
           <div class="field">
-            <label for="fNarrative">The story <span class="help">2-3 sentences</span></label>
-            <textarea id="fNarrative" placeholder="Your main supplier of [the product] has raised prices 30% overnight. You have two weeks of stock left." oninput="onEdit()"></textarea>
+            <label for="fNarrative">The story <span class="help">2 or 3 sentences</span></label>
+            <textarea id="fNarrative" placeholder="Your main supplier has raised prices 30% overnight. You have two weeks of stock left." oninput="onEdit()"></textarea>
             <div class="tokens">
-              <button class="token" type="button" onclick="insertProduct()">+ Insert product</button>
-              <span style="font-size:.75rem;color:var(--muted);align-self:center">puts a different product in each time a learner plays</span>
+              <button class="token" type="button" onclick="insertProduct()"><i class="ph ph-plus" aria-hidden="true"></i> Insert product</button>
+              <span class="token-hint">puts a different product in each time a learner plays</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field flush">
             <label for="fProduct">Products this could be about <span class="help">at least one</span></label>
             <div class="inline">
               <div class="field"><input type="text" id="fProduct" placeholder="coffee beans" onkeydown="if(event.key==='Enter'){event.preventDefault();addProduct()}"></div>
@@ -311,31 +447,31 @@ footer{padding:60px 0 40px;color:var(--muted);font-size:.82rem;text-align:center
             </div>
             <div class="chips" id="productChips"></div>
           </div>
-        </div>
+        </section>
 
-        <div class="panel">
-          <h3>The decisions</h3>
-          <p class="hint">Each decision becomes a card the learner turns over. The reason you write is what they read when it flips, so write it the way you would say it out loud.</p>
+        <section class="panel" aria-labelledby="hDecisions">
+          <h3 id="hDecisions">The decisions</h3>
+          <p class="hint">Each decision becomes a card the learner turns over. They read your reason when it flips, so write it the way you would say it out loud.</p>
           <div id="decisionList"></div>
-          <button class="btn-sm" type="button" onclick="addDecision()">+ Add a decision</button>
-        </div>
+          <button class="btn-sm" type="button" onclick="addDecision()"><i class="ph ph-plus" aria-hidden="true"></i>Add a decision</button>
+        </section>
 
-        <div class="panel">
-          <h3>What it measures</h3>
+        <section class="panel" aria-labelledby="hMeasures">
+          <h3 id="hMeasures">What it measures</h3>
           <p class="hint">The KPIs this scenario is really about. They must add up to 100%.</p>
           <div id="kpiList"></div>
-          <button class="btn-sm" type="button" onclick="addKpi()">+ Add a KPI</button>
-          <div class="kpi-total" id="kpiTotal"></div>
-        </div>
+          <button class="btn-sm" type="button" onclick="addKpi()"><i class="ph ph-plus" aria-hidden="true"></i>Add a KPI</button>
+          <div class="kpi-total" id="kpiTotal" aria-live="polite"></div>
+        </section>
       </div>
 
       <!-- ---------- right: the preview ---------- -->
       <div class="preview-col">
-        <div class="panel">
-          <h3>How it plays, country by country</h3>
-          <p class="hint">This is exactly what a learner sees — same story, local rules.</p>
-          <div id="thesisStrip"></div>
-          <div class="loc-tabs" id="locTabs"></div>
+        <section class="panel" aria-labelledby="hPreview">
+          <h3 id="hPreview">How it plays, country by country</h3>
+          <p class="hint">This is what a learner sees: the same story under local rules.</p>
+          <div id="thesisStrip" aria-live="polite"></div>
+          <div class="loc-tabs" id="locTabs" role="group" aria-label="Preview country"></div>
           <div id="previewBody"><div class="pv-empty">Start with a title and a story.<br>The preview appears as you type.</div></div>
           <div class="publish-bar">
             <span class="publish-note" id="publishNote">Nothing is saved until you publish.</span>
@@ -343,10 +479,10 @@ footer{padding:60px 0 40px;color:var(--muted);font-size:.82rem;text-align:center
           </div>
           <details class="yaml-toggle" id="yamlToggle" style="display:none">
             <summary>See the file this creates</summary>
-            <p style="margin-top:8px">You never need to edit this. It is here so you can see there is nothing hidden.</p>
+            <p>You never need to edit this. It is here so you can see nothing is hidden.</p>
             <pre id="yamlOut"></pre>
           </details>
-        </div>
+        </section>
       </div>
 
     </div>
@@ -354,13 +490,21 @@ footer{padding:60px 0 40px;color:var(--muted);font-size:.82rem;text-align:center
 
  </div>
 </div>
+</main>
 
-<footer>Built on real localization, not a translated UI. Every score carries its reason.</footer>
+<footer>Built on real localization, not a translated interface. Every score carries its reason.</footer>
 
 <script>
 const API = window.location.origin;
 let currentScenario = null;
-let flipped = {};
+let decisionIndex = new Map();   // decision id -> card index (ids never go into element ids)
+
+/* ---------------- shared helpers ---------------- */
+function esc(t){ return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// Presentation only: turn a file stem into a readable name. No locale rules live here.
+function countryName(id){ const s = String(id); return s.length <= 3 ? s.toUpperCase() : s.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()); }
+function readableName(id){ const s = String(id).replace(/_/g,' '); return s.charAt(0).toUpperCase() + s.slice(1); }
+function announce(text){ const el = document.getElementById('srAnnounce'); el.textContent = ''; requestAnimationFrame(() => { el.textContent = text; }); }
 
 /* ---- API transport: honest "reconnecting" state, one retry, never lose the scenario (BREAK.md #4) ---- */
 const statusEl = () => document.getElementById('apiStatus');
@@ -370,7 +514,7 @@ function showStatus(kind, text, retryFn){
   document.getElementById('apiSpin').style.display = kind === 'wait' ? 'inline-block' : 'none';
   document.getElementById('apiStatusText').textContent = text;
   const old = el.querySelector('button'); if(old) old.remove();
-  if(retryFn){ const b = document.createElement('button'); b.textContent = 'Try again'; b.onclick = () => { hideStatus(); retryFn(); }; el.appendChild(b); }
+  if(retryFn){ const b = document.createElement('button'); b.type = 'button'; b.textContent = 'Try again'; b.onclick = () => { hideStatus(); retryFn(); }; el.appendChild(b); }
 }
 function hideStatus(){ statusEl().className = 'api-status'; }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -386,18 +530,22 @@ async function apiFetch(path, opts, retryFn){
       throw new Error(`API returned ${r.status}`);
     }catch(e){
       if(attempt === 0){ showStatus('wait', 'Could not reach the API, retrying…'); await sleep(900); continue; }
-      showStatus('fail', "Still can't reach the API. Your scenario is still here — nothing was lost.", retryFn);
+      showStatus('fail', "Still can't reach the API. Your scenario is still here and nothing was lost.", retryFn);
       throw e;
     }
   }
 }
 
 function setMode(mode){
-  document.getElementById('learnerView').style.display = mode==='learner' ? 'block' : 'none';
-  document.getElementById('instructorView').classList.toggle('show', mode==='instructor');
-  document.getElementById('tabLearner').classList.toggle('active', mode==='learner');
-  document.getElementById('tabInstructor').classList.toggle('active', mode==='instructor');
-  if(mode==='instructor') loadInstructor();
+  const learner = mode === 'learner';
+  document.getElementById('learnerView').style.display = learner ? 'block' : 'none';
+  document.getElementById('instructorView').classList.toggle('show', !learner);
+  for(const [id, on] of [['tabLearner', learner], ['tabInstructor', !learner]]){
+    const t = document.getElementById(id);
+    t.classList.toggle('active', on);
+    t.setAttribute('aria-pressed', String(on));
+  }
+  if(!learner) loadInstructor();
 }
 
 /* ================= INSTRUCTOR AUTHORING =================
@@ -405,20 +553,19 @@ function setMode(mode){
    asks the API to render it in every country, and only writes a file when
    the instructor presses Publish. No scoring happens here (ENGINEERING.md #6).
 */
-let draft = null;          // the scenario being authored
-let editingExisting = null; // id being edited, or null for new
+let draft = null;            // the scenario being authored
+let editingExisting = null;  // id being edited, or null for new
 let previewTimer = null;
+let previewSeq = 0;          // drops responses that arrive after a newer edit
+let lastPreview = null;      // switching country re-renders this, no round trip
 let previewState = {ok:false, locale:null};
 let META = {scale_options:{}, tokens:[], locales:[]};
-let lastFocusedReason = null;
 
 function blankDraft(){
   return {id:'', title:'', industry:'', narrative:'', product_pool:[],
           decisions:[newDecision()], kpis:[{name:'cash position', pct:100}]};
 }
-function newDecision(){
-  return {label:'', options:[newOption(), newOption()]};
-}
+function newDecision(){ return {label:'', options:[newOption(), newOption()]}; }
 function newOption(){ return {label:'', points:0, multiply_by:'', reason:''}; }
 
 async function loadInstructor(){
@@ -426,22 +573,24 @@ async function loadInstructor(){
     const r = await apiFetch('/instructor/templates', {}, loadInstructor);
     const d = await r.json();
     META = d;
-    document.getElementById('localeCount').textContent = d.locales.length;
+    const n = d.templates.length, m = d.locales.length;
+    document.getElementById('localeCount').textContent = m;
     document.getElementById('catalogGrid').innerHTML = `
-      <div class="catalog-stat"><div class="n">${d.templates.length}</div><div class="l">Scenarios</div></div>
-      <div class="catalog-stat"><div class="n">${d.locales.length}</div><div class="l">Countries</div></div>
-      <div class="catalog-stat"><div class="n">${d.scenarios}</div><div class="l">Playable combinations</div></div>`;
-    document.getElementById('shelfCount').textContent =
-      `${d.templates.length} scenario${d.templates.length===1?'':'s'} × ${d.locales.length} countries`;
+      <span class="term"><span class="n">${n}</span><span class="l">scenario${n===1?'':'s'}</span></span>
+      <span class="op" aria-hidden="true">×</span><span class="sr-only">times</span>
+      <span class="term"><span class="n">${m}</span><span class="l">countr${m===1?'y':'ies'}</span></span>
+      <span class="op" aria-hidden="true">=</span><span class="sr-only">equals</span>
+      <span class="term result"><span class="n">${d.scenarios}</span><span class="l">playable combinations</span></span>`;
+    document.getElementById('shelfCount').textContent = `${n} scenario${n===1?'':'s'}, each playable in ${m} countr${m===1?'y':'ies'}`;
     document.getElementById('shelf').innerHTML =
       d.templates.map(t=>`
-        <div class="shelf-card">
-          <div class="i">${esc(t.industry)}</div>
-          <div class="t">${esc(t.title)}</div>
+        <article class="shelf-card">
+          <div class="i">${esc(String(t.industry).replace(/_/g,' '))}</div>
+          <h3 class="t">${esc(t.title)}</h3>
           <div class="m">${t.decisions} decision${t.decisions===1?'':'s'}, ${t.options} options, ${t.products} product${t.products===1?'':'s'}</div>
-          <div class="row"><button class="btn-sm" onclick="editTemplate('${esc(t.id)}')">Edit</button></div>
-        </div>`).join('') +
-      `<button class="shelf-new" onclick="newScenario()"><b>+ New scenario</b><span>Write a story, set the stakes, publish to every country.</span></button>`;
+          <div class="row"><button class="btn-sm" type="button" data-edit="${esc(t.id)}" aria-label="Edit ${esc(t.title)}"><i class="ph ph-pencil-simple" aria-hidden="true"></i>Edit</button></div>
+        </article>`).join('') +
+      `<button class="shelf-new" type="button" onclick="newScenario()"><b><i class="ph ph-plus" aria-hidden="true"></i>New scenario</b><span>Write a story, set the stakes, publish to every country.</span></button>`;
   }catch(e){ /* status strip shows it */ }
 }
 
@@ -456,9 +605,11 @@ function openBuilder(heading){
   document.getElementById('builderPane').style.display = 'block';
   document.getElementById('builderHeading').textContent = heading;
   hideBanner();
+  lastPreview = null;
   renderForm();
   schedulePreview(0);
   window.scrollTo({top:0, behavior:'smooth'});
+  document.getElementById('fTitle').focus({preventScroll:true});
 }
 
 function newScenario(){
@@ -491,16 +642,16 @@ function renderForm(){
 
 function renderProducts(){
   document.getElementById('productChips').innerHTML = draft.product_pool.map((pr,i)=>
-    `<span class="chip">${esc(pr)}<button type="button" title="Remove" onclick="removeProduct(${i})">×</button></span>`).join('');
+    `<span class="chip">${esc(pr)}<button type="button" aria-label="Remove ${esc(pr)}" onclick="removeProduct(${i})"><i class="ph ph-x" aria-hidden="true"></i></button></span>`).join('');
 }
 function addProduct(){
   const el = document.getElementById('fProduct');
   const v = el.value.trim();
   if(!v) return;
   if(!draft.product_pool.includes(v)) draft.product_pool.push(v);
-  el.value=''; renderProducts(); onEdit();
+  el.value=''; renderProducts(); onEdit(); el.focus();
 }
-function removeProduct(i){ draft.product_pool.splice(i,1); renderProducts(); onEdit(); }
+function removeProduct(i){ draft.product_pool.splice(i,1); renderProducts(); onEdit(); document.getElementById('fProduct').focus(); }
 
 function insertProduct(){
   const ta = document.getElementById('fNarrative');
@@ -513,7 +664,7 @@ function insertProduct(){
 function scaleOptions(sel){
   const opts = ['<option value="">it costs the same everywhere</option>'];
   for(const [k,label] of Object.entries(META.scale_options||{}))
-    opts.push(`<option value="${k}"${sel===k?' selected':''}>scales with ${esc(label)}</option>`);
+    opts.push(`<option value="${esc(k)}"${sel===k?' selected':''}>scales with ${esc(label)}</option>`);
   return opts.join('');
 }
 
@@ -522,53 +673,52 @@ function renderDecisions(){
     <div class="sub-card">
       <div class="bar">
         <span class="n">Decision ${di+1}</span>
-        ${draft.decisions.length>1?`<button class="btn-sm danger" type="button" onclick="removeDecision(${di})">Remove</button>`:''}
+        ${draft.decisions.length>1?`<button class="btn-sm danger" type="button" onclick="removeDecision(${di})" aria-label="Remove decision ${di+1}">Remove</button>`:''}
       </div>
       <div class="field">
-        <label>The question the learner answers</label>
-        <input type="text" value="${esc(d.label)}" placeholder="Do you absorb the increase or pass it on?"
+        <label for="dq-${di}">The question the learner answers</label>
+        <input type="text" id="dq-${di}" value="${esc(d.label)}" placeholder="Do you absorb the increase or pass it on?"
                oninput="draft.decisions[${di}].label=this.value; onEdit()">
       </div>
       ${d.options.map((o,oi)=>`
         <div class="opt-card">
           <div class="bar">
             <span class="n">Option ${oi+1}</span>
-            ${d.options.length>2?`<button class="btn-sm danger" type="button" onclick="removeOption(${di},${oi})">Remove</button>`:''}
+            ${d.options.length>2?`<button class="btn-sm danger" type="button" onclick="removeOption(${di},${oi})" aria-label="Remove option ${oi+1} of decision ${di+1}">Remove</button>`:''}
           </div>
           <div class="field">
-            <label>What the learner picks</label>
-            <input type="text" value="${esc(o.label)}" placeholder="Absorb it"
+            <label for="ol-${di}-${oi}">What the learner picks</label>
+            <input type="text" id="ol-${di}-${oi}" value="${esc(o.label)}" placeholder="Absorb it"
                    oninput="draft.decisions[${di}].options[${oi}].label=this.value; onEdit()">
           </div>
-          <div class="inline" style="margin-bottom:12px">
-            <div class="field" style="max-width:130px">
-              <label>Points</label>
-              <input type="number" step="1" value="${o.points}"
+          <div class="inline spaced">
+            <div class="field points">
+              <label for="op-${di}-${oi}">Points</label>
+              <input type="number" id="op-${di}-${oi}" step="1" value="${esc(o.points)}"
                      oninput="draft.decisions[${di}].options[${oi}].points=this.value; onEdit()">
             </div>
             <div class="field">
-              <label>Does the local market change this?</label>
-              <select onchange="draft.decisions[${di}].options[${oi}].multiply_by=this.value; onEdit()">
+              <label for="os-${di}-${oi}">Does the local market change this?</label>
+              <select id="os-${di}-${oi}" onchange="draft.decisions[${di}].options[${oi}].multiply_by=this.value; onEdit()">
                 ${scaleOptions(o.multiply_by)}
               </select>
             </div>
           </div>
-          <div class="field" style="margin-bottom:0">
-            <label>Why — the learner reads this when the card flips <span class="help">click in for local values you can drop in</span></label>
+          <div class="field flush">
+            <label for="reason-${di}-${oi}">The reason, shown when the card flips <span class="help">click in to add local values</span></label>
             <input type="text" id="reason-${di}-${oi}" value="${esc(o.reason)}"
                    placeholder="Absorbing protects volume but costs margin: [points] pts."
-                   onfocus="lastFocusedReason='reason-${di}-${oi}'"
                    oninput="draft.decisions[${di}].options[${oi}].reason=this.value; onEdit()">
-            <div class="tokens">${(META.tokens||[]).map(t=>
-              `<button class="token" type="button" onmousedown="event.preventDefault()" onclick="insertToken('reason-${di}-${oi}','${t}')">${esc(t)}</button>`).join('')}</div>
+            <div class="tokens" role="group" aria-label="Insert a local value">${(META.tokens||[]).map(t=>
+              `<button class="token" type="button" onmousedown="event.preventDefault()" onclick="insertToken('reason-${di}-${oi}','${esc(t)}')">${esc(t)}</button>`).join('')}</div>
           </div>
         </div>`).join('')}
-      <button class="btn-sm" type="button" onclick="addOption(${di})">+ Add an option</button>
+      <button class="btn-sm" type="button" onclick="addOption(${di})"><i class="ph ph-plus" aria-hidden="true"></i>Add an option</button>
     </div>`).join('');
 }
-function addDecision(){ draft.decisions.push(newDecision()); renderDecisions(); onEdit(); }
+function addDecision(){ draft.decisions.push(newDecision()); renderDecisions(); onEdit(); document.getElementById(`dq-${draft.decisions.length-1}`).focus(); }
 function removeDecision(i){ draft.decisions.splice(i,1); renderDecisions(); onEdit(); }
-function addOption(di){ draft.decisions[di].options.push(newOption()); renderDecisions(); onEdit(); }
+function addOption(di){ draft.decisions[di].options.push(newOption()); renderDecisions(); onEdit(); document.getElementById(`ol-${di}-${draft.decisions[di].options.length-1}`).focus(); }
 function removeOption(di,oi){ draft.decisions[di].options.splice(oi,1); renderDecisions(); onEdit(); }
 
 function insertToken(fieldId, token){
@@ -584,22 +734,22 @@ function insertToken(fieldId, token){
 function renderKpis(){
   document.getElementById('kpiList').innerHTML = draft.kpis.map((k,i)=>`
     <div class="kpi-row">
-      <input type="text" value="${esc(k.name)}" placeholder="customer satisfaction"
+      <input type="text" value="${esc(k.name)}" placeholder="customer satisfaction" aria-label="KPI ${i+1} name"
              oninput="draft.kpis[${i}].name=this.value; onEdit()">
-      <input type="number" min="0" max="100" value="${k.pct}"
+      <input type="number" min="0" max="100" value="${esc(k.pct)}" aria-label="KPI ${i+1} weight in percent"
              oninput="draft.kpis[${i}].pct=this.value; updateKpiTotal(); onEdit()">
-      <span style="color:var(--muted);font-size:.85rem">%</span>
-      ${draft.kpis.length>1?`<button class="btn-sm danger" type="button" onclick="removeKpi(${i})">×</button>`:''}
+      <span class="pct" aria-hidden="true">%</span>
+      ${draft.kpis.length>1?`<button class="btn-sm danger icon-only" type="button" onclick="removeKpi(${i})" aria-label="Remove KPI ${i+1}"><i class="ph ph-x" aria-hidden="true"></i></button>`:''}
     </div>`).join('');
   updateKpiTotal();
 }
-function addKpi(){ draft.kpis.push({name:'', pct:0}); renderKpis(); onEdit(); }
+function addKpi(){ draft.kpis.push({name:'', pct:0}); renderKpis(); onEdit(); document.querySelector('.kpi-row:last-child input[type=text]').focus(); }
 function removeKpi(i){ draft.kpis.splice(i,1); renderKpis(); onEdit(); }
 function updateKpiTotal(){
   const total = draft.kpis.reduce((a,k)=>a+(Number(k.pct)||0),0);
   const el = document.getElementById('kpiTotal');
   el.className = 'kpi-total ' + (total===100?'ok':'bad');
-  el.textContent = total===100 ? 'Adds up to 100%.' : `Adds up to ${total}% — needs to be 100%.`;
+  el.textContent = total===100 ? 'Adds up to 100%.' : `Adds up to ${total}%. It needs to be 100%.`;
 }
 
 /* ---------------- preview ---------------- */
@@ -631,25 +781,34 @@ function schedulePreview(delay){
 }
 
 async function refreshPreview(){
+  const seq = ++previewSeq;
   const body = document.getElementById('previewBody');
+  body.setAttribute('aria-busy', 'true');
   try{
     const r = await apiFetch('/instructor/drafts/preview',
       {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(draftPayload())},
       refreshPreview);
+    if(seq !== previewSeq) return;   // a newer edit is already on its way
     if(r.status === 422){
-      previewState.ok = false;
+      const detail = (await r.json()).detail;
+      if(seq !== previewSeq) return;
+      previewState.ok = false; lastPreview = null;
       setPublish(false, 'Fix the note above to publish.');
       document.getElementById('thesisStrip').innerHTML = '';
       document.getElementById('locTabs').innerHTML = '';
       document.getElementById('yamlToggle').style.display = 'none';
-      body.innerHTML = `<div class="pv-error">${esc((await r.json()).detail)}</div>`;
+      body.innerHTML = `<div class="pv-error"><i class="ph ph-warning-circle" aria-hidden="true"></i><span>${esc(detail)}</span></div>`;
       return;
     }
     if(!r.ok) return;
     const d = await r.json();
-    previewState.ok = true;
+    if(seq !== previewSeq) return;
+    previewState.ok = true; lastPreview = d;
     renderPreview(d);
-  }catch(e){}
+  }catch(e){
+  }finally{
+    if(seq === previewSeq) body.removeAttribute('aria-busy');
+  }
 }
 
 function renderPreview(d){
@@ -657,20 +816,23 @@ function renderPreview(d){
   if(!previewState.locale || !locs.some(l=>l.locale_id===previewState.locale))
     previewState.locale = locs[0].locale_id;
 
-  // Does this scenario actually behave differently per country?
+  // Does this scenario actually behave differently per country? (comparison of API numbers, no scoring)
   let varying = 0, total = 0;
   locs[0].decisions.forEach((dec,di)=>dec.options.forEach((o,oi)=>{
     total++;
     const deltas = new Set(locs.map(l=>l.decisions[di].options[oi].score_delta));
     if(deltas.size > 1) varying++;
   }));
-  const strip = document.getElementById('thesisStrip');
-  strip.innerHTML = varying
-    ? `<div class="thesis good"><span>✓</span><span><b>Genuinely localized.</b> ${varying} of ${total} option${total===1?'':'s'} score${varying===1?'s':''} differently across the ${locs.length} countries, because ${varying===1?'it uses':'they use'} the local rules.</span></div>`
-    : `<div class="thesis warn"><span>!</span><span><b>Same score everywhere.</b> This scenario will play identically in all ${locs.length} countries. Set an option to scale with a local rule if the real cost depends on where you are.</span></div>`;
+  document.getElementById('thesisStrip').innerHTML = varying
+    ? `<div class="thesis good"><i class="ph ph-check-circle" aria-hidden="true"></i><span><b>Genuinely localized.</b> ${varying} of ${total} option${total===1?'':'s'} score${varying===1?'s':''} differently across the ${locs.length} countries, because ${varying===1?'it uses':'they use'} the local rules.</span></div>`
+    : `<div class="thesis warn"><i class="ph ph-warning-circle" aria-hidden="true"></i><span><b>Same score everywhere.</b> This scenario plays identically in all ${locs.length} countries. Set an option to scale with a local rule if the real cost depends on where you are.</span></div>`;
 
-  document.getElementById('locTabs').innerHTML = locs.map(l=>
-    `<button class="loc-tab${l.locale_id===previewState.locale?' active':''}" onclick="pickLocale('${l.locale_id}')">${esc(l.locale)}</button>`).join('');
+  const tabHadFocus = document.activeElement && document.activeElement.classList.contains('loc-tab');
+  document.getElementById('locTabs').innerHTML = locs.map(l=>{
+    const on = l.locale_id === previewState.locale;
+    return `<button class="loc-tab${on?' active':''}" type="button" aria-pressed="${on}" data-locale="${esc(l.locale_id)}" aria-label="${esc(countryName(l.locale_id))}">${esc(l.locale)}</button>`;
+  }).join('');
+  if(tabHadFocus){ const t = document.querySelector('.loc-tab[aria-pressed="true"]'); if(t) t.focus(); }
 
   const l = locs.find(x=>x.locale_id===previewState.locale);
   const r = l.locale_rules;
@@ -678,8 +840,8 @@ function renderPreview(d){
     <div class="pv-narrative">${esc(l.narrative)}</div>
     <div class="pv-facts">
       <span><b>${(r.tax_rate*100).toFixed(1)}%</b> ${esc(r.tax_type)}</span>
-      <span><b>${r.freight_expedite_multiplier}x</b> expedite freight</span>
-      <span><b>${r.payment_terms_days} days</b> payment terms</span>
+      <span><b>${esc(r.freight_expedite_multiplier)}x</b> expedite freight</span>
+      <span><b>${esc(r.payment_terms_days)} days</b> payment terms</span>
       <span><b>${esc(l.currency)}</b></span>
     </div>
     ${l.decisions.map((dec,di)=>`
@@ -687,15 +849,14 @@ function renderPreview(d){
         <div class="q">${esc(dec.label)}</div>
         ${dec.options.map((o,oi)=>`
           <div class="pv-opt">
-            <span class="d ${o.score_delta>0?'pos':(o.score_delta<0?'neg':'')}">${o.score_delta>0?'+':''}${o.score_delta}</span>
-            <span class="why"><b>${esc(optionLabel(di,oi) || o.choice.replace(/_/g,' '))}</b>${esc(o.justification[0])}</span>
+            <span class="d ${o.score_delta>0?'pos':(o.score_delta<0?'neg':'')}">${o.score_delta>0?'+':''}${esc(o.score_delta)}</span>
+            <span class="why"><b>${esc(optionLabel(di,oi) || String(o.choice).replace(/_/g,' '))}</b>${esc(o.justification[0])}</span>
           </div>`).join('')}
       </div>`).join('')}`;
 
   document.getElementById('yamlOut').textContent = d.yaml;
   document.getElementById('yamlToggle').style.display = 'block';
-  const replacing = d.exists;
-  setPublish(true, replacing
+  setPublish(true, d.exists
     ? `Publishing replaces “${d.template_id}”. The version you are replacing is kept.`
     : `Publishing adds this to all ${locs.length} countries at once.`);
 }
@@ -704,13 +865,13 @@ function optionLabel(di, oi){
   try{ return (draft.decisions[di].options[oi].label || '').trim(); }catch(e){ return ''; }
 }
 
-function pickLocale(id){ previewState.locale = id; schedulePreview(0); }
+function pickLocale(id){
+  previewState.locale = id;
+  if(lastPreview) renderPreview(lastPreview); else schedulePreview(0);
+}
 
 function setPublish(enabled, note){
-  const b = document.getElementById('publishBtn');
-  b.disabled = !enabled;
-  b.style.opacity = enabled ? '1' : '.45';
-  b.style.cursor = enabled ? 'pointer' : 'not-allowed';
+  document.getElementById('publishBtn').disabled = !enabled;
   document.getElementById('publishNote').textContent = note;
 }
 
@@ -722,37 +883,42 @@ function hideBanner(){ document.getElementById('builderBanner').className = 'ban
 
 async function publishDraft(overwrite){
   const btn = document.getElementById('publishBtn');
-  btn.disabled = true; btn.textContent = 'Publishing…';
+  btn.disabled = true; btn.textContent = 'Publishing…'; btn.setAttribute('aria-busy','true');
   try{
     const r = await apiFetch(`/instructor/drafts/publish?overwrite=${overwrite?'true':'false'}`,
       {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(draftPayload())},
       ()=>publishDraft(overwrite));
     const d = await r.json();
     if(r.status === 409){
-      showBanner('err', `${esc(d.detail)} <button class="btn-sm" style="margin-left:8px" onclick="publishDraft(true)">Replace it</button>`);
+      showBanner('err', `<span>${esc(d.detail)}</span><button class="btn-sm" type="button" onclick="publishDraft(true)">Replace it</button>`);
       return;
     }
-    if(!r.ok){ showBanner('err', esc(d.detail || 'Could not publish.')); return; }
-    showBanner('ok', `<b>Published.</b> “${esc(document.getElementById('fTitle').value)}” is live in ${d.locales.length} countries — learners can play it now.` +
-                     (d.overwrote ? ' The previous version was archived.' : ''));
+    if(!r.ok){ showBanner('err', `<i class="ph ph-warning-circle" aria-hidden="true"></i><span>${esc(d.detail || 'Could not publish.')}</span>`); return; }
+    showBanner('ok', `<i class="ph ph-check-circle" aria-hidden="true"></i><span><b>Published.</b> “${esc(document.getElementById('fTitle').value)}” is live in ${d.locales.length} countries. Learners can play it now.${d.overwrote ? ' The previous version was archived.' : ''}</span>`);
     editingExisting = d.published;
     await populateSelectors();
     schedulePreview(0);
   }catch(e){
-    showBanner('err', 'Could not reach the API. Nothing was published.');
+    showBanner('err', `<i class="ph ph-warning-circle" aria-hidden="true"></i><span>Could not reach the API. Nothing was published.</span>`);
   }finally{
-    btn.textContent = 'Publish';
+    btn.textContent = 'Publish'; btn.removeAttribute('aria-busy');
+    btn.disabled = !previewState.ok;
   }
 }
 
+/* ================= LEARNER ================= */
 async function populateSelectors(){
+  const tSel = document.getElementById('templateSelect'), lSel = document.getElementById('localeSelect');
+  const prevT = tSel.value, prevL = lSel.value;
   try{
     const r = await fetch(`${API}/catalog`);
     const d = await r.json();
-    document.getElementById('templateSelect').innerHTML = d.templates.map(t=>`<option value="${t}">${t.replace(/_/g,' ')}</option>`).join('');
-    document.getElementById('localeSelect').innerHTML = d.locales.map(l=>`<option value="${l}">${l.toUpperCase()}</option>`).join('');
+    tSel.innerHTML = d.templates.map(t=>`<option value="${esc(t)}">${esc(readableName(t))}</option>`).join('');
+    lSel.innerHTML = d.locales.map(l=>`<option value="${esc(l)}">${esc(countryName(l))}</option>`).join('');
+    if(d.templates.includes(prevT)) tSel.value = prevT;
+    if(d.locales.includes(prevL)) lSel.value = prevL;
   }catch(e){
-    document.getElementById('greeting').textContent = 'Could not reach the API — is the backend running?';
+    document.getElementById('greeting').textContent = 'Could not reach the API. Is the backend running?';
   }
 }
 
@@ -760,14 +926,17 @@ async function checkMemory(){
   const learnerId = document.getElementById('learnerId').value.trim();
   const templateId = document.getElementById('templateSelect').value;
   const locale = document.getElementById('localeSelect').value;
-  if(!learnerId || !templateId || !locale) return;
+  const strip = document.getElementById('memoryStrip');
+  if(!learnerId || !templateId || !locale){ strip.classList.remove('show'); return; }
   try{
-    const r = await fetch(`${API}/learners/${encodeURIComponent(learnerId)}/progress/${templateId}?locale=${locale}`);
+    const r = await fetch(`${API}/learners/${encodeURIComponent(learnerId)}/progress/${encodeURIComponent(templateId)}?locale=${encodeURIComponent(locale)}`);
+    if(!r.ok){ strip.classList.remove('show'); return; }
     const d = await r.json();
-    const strip = document.getElementById('memoryStrip');
     if(d.attempts > 0){
-      const mistake = d.last_mistake ? ` Last time this tripped you up: <i>${esc(d.last_mistake)}</i>` : '';
-      document.getElementById('memoryText').innerHTML = `Welcome back, <b>${esc(learnerId)}</b> — you've tried this in <b>${locale.toUpperCase()}</b> ${d.attempts} time${d.attempts>1?'s':''}. Best score: <b>${d.best_score}</b>.${mistake}`;
+      const n = d.attempts;
+      let html = `Welcome back, <b>${esc(learnerId)}</b>. You have made <b class="num">${esc(n)}</b> decision${n===1?'':'s'} in this scenario in ${esc(countryName(locale))}. Best single decision: <b class="num">${esc(d.best_score)}</b>.`;
+      if(d.last_mistake) html += `<span class="tripped">Last time this tripped you up: ${esc(d.last_mistake)}</span>`;
+      document.getElementById('memoryText').innerHTML = html;
       strip.classList.add('show');
     } else {
       strip.classList.remove('show');
@@ -775,55 +944,77 @@ async function checkMemory(){
   }catch(e){}
 }
 
-function esc(t){ return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
 async function loadScenario(){
   const templateId = document.getElementById('templateSelect').value;
   const locale = document.getElementById('localeSelect').value;
   const seed = Math.floor(Math.random()*1000);
+  const btn = document.getElementById('beginBtn');
+  const block = document.getElementById('scenarioBlock');
+  const skeleton = document.getElementById('scenarioSkeleton');
+  const empty = document.getElementById('learnerEmpty');
+  btn.disabled = true; btn.setAttribute('aria-busy','true');
+  empty.hidden = true;
+  // Only show the skeleton if the wait is noticeable, so fast loads never flash.
+  const skTimer = setTimeout(()=>{ block.classList.remove('show'); skeleton.hidden = false; }, 180);
   try{
     const body = new URLSearchParams({template_id: templateId, locale, seed});
     const r = await apiFetch('/scenarios/generate', {method:'POST', body}, loadScenario);
-    if(!r.ok){ showStatus('fail', 'Could not generate scenario: ' + ((await r.json()).detail || r.status)); return; }
+    if(!r.ok){ showStatus('fail', 'Could not start that scenario: ' + ((await r.json()).detail || r.status)); return; }
     const s = await r.json();
     currentScenario = s;
+    clearTimeout(skTimer); skeleton.hidden = true;
     renderScenario(s);
     document.getElementById('statRunning').textContent = '100.0';
+    const title = document.getElementById('scenarioTitle');
+    title.setAttribute('tabindex','-1'); title.focus({preventScroll:true});
+    block.scrollIntoView({behavior:'smooth', block:'start'});
+    announce(`${s.title}, in ${countryName(s.locale_id)}. ${s.decisions.length} decisions.`);
     await checkMemory();
-  }catch(e){ /* status strip already shows the honest state */ }
+  }catch(e){ /* status strip already shows the honest state */
+  }finally{
+    clearTimeout(skTimer); skeleton.hidden = true;
+    btn.disabled = false; btn.removeAttribute('aria-busy');
+    if(!currentScenario) empty.hidden = false;
+  }
 }
 
 function renderScenario(s){
+  document.getElementById('learnerEmpty').hidden = true;
   document.getElementById('scenarioBlock').classList.add('show');
-  document.getElementById('scenarioIndustry').textContent = s.locale + ' · ' + s.currency;
+  document.getElementById('scenarioIndustry').textContent = `${countryName(s.locale_id)} · ${s.currency}`;
   document.getElementById('scenarioTitle').textContent = s.title;
   document.getElementById('scenarioNarrative').textContent = s.narrative;
   const lr = s.locale_rules;
   document.getElementById('localeFacts').innerHTML = `
-    <span><b>${(lr.tax_rate*100).toFixed(1)}%</b> ${lr.tax_type}</span>
-    <span><b>${lr.freight_expedite_multiplier}x</b> expedite freight cost</span>
-    <span><b>${lr.payment_terms_days} days</b> payment terms</span>
-  `;
-  flipped = {};
-  document.getElementById('decisionsContainer').innerHTML = s.decisions.map((d,i)=>`
-    <div class="decision">
-      <div class="decision-label">${d.label}</div>
+    <div><dt>Tax</dt><dd>${(lr.tax_rate*100).toFixed(1)}% ${esc(lr.tax_type)}</dd></div>
+    <div><dt>Expedite freight</dt><dd>${esc(lr.freight_expedite_multiplier)}x cost</dd></div>
+    <div><dt>Payment terms</dt><dd>${esc(lr.payment_terms_days)} days</dd></div>`;
+  decisionIndex = new Map();
+  // Every authored string is escaped: publishing is open (DEBT.md), so it is untrusted.
+  document.getElementById('decisionsContainer').innerHTML = s.decisions.map((d,i)=>{
+    decisionIndex.set(d.id, i);
+    return `
+    <div class="decision" style="--i:${i}">
+      <div class="decision-label" id="dl-${i}">${esc(d.label)}</div>
       <div class="card-flip">
-        <div class="card-inner" id="cardInner-${d.id}">
-          <div class="card-face card-front">
+        <div class="card-inner" id="cardInner-${i}">
+          <div class="card-face card-front" role="group" aria-labelledby="dl-${i}">
             <div class="options">
-              ${d.options.map(o=>`<button class="opt" onclick="makeDecision('${d.id}','${o}')">${o.replace(/_/g,' ')}</button>`).join('')}
+              ${d.options.map(o=>`<button class="opt" type="button" data-decision="${esc(d.id)}" data-choice="${esc(o)}">${esc(String(o).replace(/_/g,' '))}</button>`).join('')}
             </div>
           </div>
-          <div class="card-face card-back" id="cardBack-${d.id}"></div>
+          <div class="card-face card-back" id="cardBack-${i}" aria-hidden="true"></div>
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 async function makeDecision(decisionId, choice){
   if(!currentScenario) return;
+  const idx = decisionIndex.get(decisionId);
+  const buttons = document.querySelectorAll(`#cardInner-${idx} .card-front .opt`);
+  buttons.forEach(b => b.disabled = true);   // one answer per card, no double submit
   const learnerId = document.getElementById('learnerId').value.trim() || null;
   try{
     const body = new URLSearchParams({
@@ -832,38 +1023,67 @@ async function makeDecision(decisionId, choice){
     });
     if(learnerId) body.set('learner_id', learnerId);
     const r = await apiFetch('/decisions/score', {method:'POST', body}, () => makeDecision(decisionId, choice));
-    if(!r.ok){ showStatus('fail', 'Could not score that decision: ' + ((await r.json()).detail || r.status)); return; }
+    if(!r.ok){
+      showStatus('fail', 'Could not score that decision: ' + ((await r.json()).detail || r.status));
+      buttons.forEach(b => b.disabled = false);
+      return;
+    }
     const result = await r.json();
     revealCard(decisionId, result);
     // Score comes from the API, never computed here (ENGINEERING.md #6).
     document.getElementById('statRunning').textContent = result.running_score.toFixed(1);
     document.getElementById('scorebar').classList.add('show');
     await refreshScorebar(learnerId, currentScenario.template_id, currentScenario.locale_id);
-  }catch(e){ /* status strip already shows the honest state */ }
+  }catch(e){
+    buttons.forEach(b => b.disabled = false);   /* status strip already shows the honest state */
+  }
 }
 
 function revealCard(decisionId, result){
-  const back = document.getElementById(`cardBack-${decisionId}`);
-  const cls = result.score_delta > 0 ? 'pos' : (result.score_delta < 0 ? 'neg' : '');
-  const sign = result.score_delta > 0 ? '+' : '';
+  const idx = decisionIndex.get(decisionId);
+  const inner = document.getElementById(`cardInner-${idx}`);
+  const front = inner.querySelector('.card-front');
+  const back = document.getElementById(`cardBack-${idx}`);
+  const delta = result.score_delta;
+  const cls = delta > 0 ? 'pos' : (delta < 0 ? 'neg' : '');
+  const sign = delta > 0 ? '+' : '';
+  const [reason, ...localRule] = result.justification;
   back.innerHTML = `
-    <div class="delta ${cls}">${sign}${result.score_delta} pts</div>
-    <div class="justification">${result.justification.join(' ')}</div>
-  `;
-  const inner = document.getElementById(`cardInner-${decisionId}`);
+    <div class="delta ${cls}">${sign}${esc(delta)}<small>points</small></div>
+    <p class="reason">${esc(reason || '')}</p>
+    ${localRule.length ? `<p class="local-rule">${esc(localRule.join(' '))}</p>` : ''}`;
+  // The front face is now hidden: take it out of the tab order and the accessibility tree.
+  front.inert = true; front.setAttribute('aria-hidden','true');
+  back.removeAttribute('aria-hidden'); back.tabIndex = -1;
   requestAnimationFrame(()=> inner.classList.add('flipped'));
+  back.focus({preventScroll:true});
+  announce(`${sign}${delta} points. ${reason || ''}`);
 }
 
 async function refreshScorebar(learnerId, templateId, locale){
   if(!learnerId) return;
   try{
-    const r = await fetch(`${API}/learners/${encodeURIComponent(learnerId)}/progress/${templateId}?locale=${locale}`);
+    const r = await fetch(`${API}/learners/${encodeURIComponent(learnerId)}/progress/${encodeURIComponent(templateId)}?locale=${encodeURIComponent(locale)}`);
     const d = await r.json();
     document.getElementById('scorebar').classList.add('show');
-    document.getElementById('statBest').textContent = d.best_score ?? '—';
+    document.getElementById('statBest').textContent = d.best_score ?? 'None';
     document.getElementById('statAttempts').textContent = d.attempts ?? 0;
   }catch(e){}
 }
+
+/* ---------------- delegated events (no authored strings inside onclick attributes) ---------------- */
+document.getElementById('decisionsContainer').addEventListener('click', e=>{
+  const b = e.target.closest('button.opt');
+  if(b && !b.disabled) makeDecision(b.dataset.decision, b.dataset.choice);
+});
+document.getElementById('shelf').addEventListener('click', e=>{
+  const b = e.target.closest('button[data-edit]');
+  if(b) editTemplate(b.dataset.edit);
+});
+document.getElementById('locTabs').addEventListener('click', e=>{
+  const b = e.target.closest('button.loc-tab');
+  if(b) pickLocale(b.dataset.locale);
+});
 
 populateSelectors().then(checkMemory);
 document.getElementById('learnerId').addEventListener('change', checkMemory);
