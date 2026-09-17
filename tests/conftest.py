@@ -8,17 +8,17 @@ os.environ.setdefault("ERPSIM_DATABASE_URL", "sqlite://")
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import SQLModel, create_engine
 from sqlalchemy.pool import StaticPool
+from sqlmodel import create_engine
 
-from erpsim import main
+from erpsim import main, migrations
 
 
 @pytest.fixture
 def client(monkeypatch):
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False},
                            poolclass=StaticPool)
-    SQLModel.metadata.create_all(engine)
+    migrations.migrate(engine)
     monkeypatch.setattr(main, "engine", engine)
     with TestClient(main.app) as c:
         yield c

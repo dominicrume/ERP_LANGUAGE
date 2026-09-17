@@ -6,9 +6,9 @@ from pathlib import Path
 from fastapi import Body, FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import Session, create_engine
 
-from erpsim import authoring, generator, locales, memory, runs, scoring, templates
+from erpsim import authoring, generator, locales, memory, migrations, runs, scoring, templates
 
 DEFAULT_DATABASE_URL = "sqlite:///erpsim.db"
 LEARNER_ID_MAX = 64
@@ -45,7 +45,8 @@ def make_engine(url: str):
 
 
 engine = make_engine(database_url())
-SQLModel.metadata.create_all(engine)
+# Versioned schema: adds what is missing, never guesses at existing data.
+migrations.migrate(engine)
 
 app = FastAPI(title="ERP Decision Lab", version="0.4.0")
 

@@ -13,10 +13,16 @@ completed at least one run. Two runs in a day do not raise it. Missing a
 day resets it to 1 on the next completion."""
 from datetime import date, datetime, timezone
 from typing import Optional
+from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, Session, SQLModel, select
 
 
 class LearnerProgress(SQLModel, table=True):
+    # One row per learner per template per country, enforced by the database
+    # so two interleaved writes cannot create a second, invisible record.
+    __table_args__ = (UniqueConstraint("learner_id", "template_id", "locale",
+                                       name="ix_learnerprogress_learner_template_locale"),)
+
     id: Optional[int] = Field(default=None, primary_key=True)
     learner_id: str = Field(index=True)
     template_id: str = Field(index=True)
