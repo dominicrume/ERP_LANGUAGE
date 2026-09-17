@@ -226,19 +226,22 @@ async function populateSelectors(){
 async function checkMemory(){
   const learnerId = document.getElementById('learnerId').value.trim();
   const templateId = document.getElementById('templateSelect').value;
-  if(!learnerId || !templateId) return;
+  const locale = document.getElementById('localeSelect').value;
+  if(!learnerId || !templateId || !locale) return;
   try{
-    const r = await fetch(`${API}/learners/${learnerId}/progress/${templateId}`);
+    const r = await fetch(`${API}/learners/${encodeURIComponent(learnerId)}/progress/${templateId}?locale=${locale}`);
     const d = await r.json();
     const strip = document.getElementById('memoryStrip');
     if(d.attempts > 0){
-      document.getElementById('memoryText').innerHTML = `Welcome back, <b>${learnerId}</b> — you've tried this ${d.attempts} time${d.attempts>1?'s':''}. Best score: <b>${d.best_score}</b>.`;
+      document.getElementById('memoryText').innerHTML = `Welcome back, <b>${esc(learnerId)}</b> — you've tried this in <b>${locale.toUpperCase()}</b> ${d.attempts} time${d.attempts>1?'s':''}. Best score: <b>${d.best_score}</b>.`;
       strip.classList.add('show');
     } else {
       strip.classList.remove('show');
     }
   }catch(e){}
 }
+
+function esc(t){ return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 async function loadScenario(){
   const templateId = document.getElementById('templateSelect').value;
@@ -299,7 +302,7 @@ async function makeDecision(decisionId, choice){
     if(!r.ok){ throw new Error(await r.text()); }
     const result = await r.json();
     revealCard(decisionId, result);
-    await refreshScorebar(learnerId, currentScenario.template_id);
+    await refreshScorebar(learnerId, currentScenario.template_id, document.getElementById('localeSelect').value);
   }catch(e){
     alert('Could not score decision: ' + e.message);
   }
@@ -317,10 +320,10 @@ function revealCard(decisionId, result){
   requestAnimationFrame(()=> inner.classList.add('flipped'));
 }
 
-async function refreshScorebar(learnerId, templateId){
+async function refreshScorebar(learnerId, templateId, locale){
   if(!learnerId) return;
   try{
-    const r = await fetch(`${API}/learners/${learnerId}/progress/${templateId}`);
+    const r = await fetch(`${API}/learners/${encodeURIComponent(learnerId)}/progress/${templateId}?locale=${locale}`);
     const d = await r.json();
     document.getElementById('scorebar').classList.add('show');
     document.getElementById('statBest').textContent = d.best_score ?? '—';
@@ -351,6 +354,7 @@ async function validateTemplate(){
 populateSelectors().then(checkMemory);
 document.getElementById('learnerId').addEventListener('change', checkMemory);
 document.getElementById('templateSelect').addEventListener('change', checkMemory);
+document.getElementById('localeSelect').addEventListener('change', checkMemory);
 </script>
 </body>
 </html>

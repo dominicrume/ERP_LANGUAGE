@@ -73,13 +73,24 @@ def score(template_id: str = Form(...), locale: str = Form(...), seed: int = For
 
 
 @app.get("/learners/{learner_id}/progress/{template_id}")
-def progress(learner_id: str, template_id: str):
+def progress(learner_id: str, template_id: str, locale: Optional[str] = None):
+    """With ?locale= : that learner's record for one country. Without: the
+    same learner's per-locale records plus totals. Never another learner's."""
     with Session(engine) as s:
-        p = memory.recall(s, learner_id, template_id)
-        if not p:
-            return {"learner_id": learner_id, "template_id": template_id, "attempts": 0,
-                    "best_score": None, "note": "no attempts yet"}
-        return p.model_dump()
+        if locale:
+            p = memory.recall(s, learner_id, template_id, locale)
+            if not p:
+                return {"learner_id": learner_id, "template_id": template_id, "locale": locale.lower(),
+                        "attempts": 0, "best_score": None, "last_mistake": None, "note": "no attempts yet"}
+            return p.model_dump()
+        rows = [r.model_dump() for r in memory.recall_all(s, learner_id, template_id)]
+        out = {"learner_id": learner_id, "template_id": template_id,
+               "attempts": sum(r["attempts"] for r in rows),
+               "best_score": max((r["best_score"] for r in rows), default=None),
+               "by_locale": rows}
+        if not rows:
+            out["note"] = "no attempts yet"
+        return out
 
 
 @app.post("/instructor/templates/validate")

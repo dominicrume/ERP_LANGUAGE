@@ -38,3 +38,21 @@ def test_invalid_decision_id_is_rejected_loud(client):
 def test_unknown_locale_404s_at_api(client):
     r = _score(client, locale="atlantis")
     assert r.status_code == 404
+
+
+def test_progress_is_per_locale_at_api(client):
+    """Fix 3: progress endpoint reports per locale and never merges them."""
+    _score(client, locale="uk", choice="standard", learner_id="frank")
+    _score(client, locale="nigeria", choice="expedite", learner_id="frank")
+    uk = client.get("/learners/frank/progress/heatwave_demand", params={"locale": "uk"}).json()
+    ng = client.get("/learners/frank/progress/heatwave_demand", params={"locale": "nigeria"}).json()
+    assert uk["attempts"] == 1 and uk["best_score"] == 100.0
+    assert ng["attempts"] == 1 and ng["best_score"] < 100.0
+    total = client.get("/learners/frank/progress/heatwave_demand").json()
+    assert total["attempts"] == 2
+    assert {r["locale"] for r in total["by_locale"]} == {"uk", "nigeria"}
+
+
+def test_progress_unknown_locale_is_empty_not_error(client):
+    r = client.get("/learners/frank/progress/heatwave_demand", params={"locale": "brazil"})
+    assert r.status_code == 200 and r.json()["attempts"] == 0
